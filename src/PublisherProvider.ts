@@ -61,9 +61,7 @@ export class PublisherProvider {
       });
       const cmd = `${this.packageManager} publish ${args.join(" ")}`;
       console.log(cmd);
-      console.log("env", process.env);
       execSync(cmd, {
-        env: process.env,
         stdio: "inherit",
       });
     } finally {
