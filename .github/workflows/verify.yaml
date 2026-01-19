@@ -2,8 +2,9 @@ name: (📡) Verify Package
 
 on:
   push:
-    branches-ignore:
+    branches:
       - "main"
+
   workflow_dispatch:
 
 jobs:
