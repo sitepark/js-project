@@ -121,7 +121,6 @@ export class ReleaseManagement {
     );
 
     this.git.createTag(releaseVersion, "Release Version " + releaseVersion);
-    this.git.push();
 
     this.publisherProvider.publish();
 
@@ -135,8 +134,6 @@ export class ReleaseManagement {
     );
 
     this.git.push();
-
-    //this.git.pushOrigin(releaseVersion);
 
     return releaseVersion;
   }
