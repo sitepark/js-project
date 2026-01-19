@@ -112,9 +112,11 @@ export class Git {
     execSync(`git push`, {
       stdio: "inherit",
     });
+    /*
     execSync(`git push --tags`, {
       stdio: "inherit",
     });
+    */
   }
 
   private toStringArray(output: string): string[] {
