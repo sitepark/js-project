@@ -49,11 +49,16 @@ export class PublisherProvider {
         this.packageManager === "yarn"
           ? ["--ignore-scripts", "--non-interactive"]
           : [],
-        this.packageManager === "pnpm" ? ["--ignore-scripts"] : [],
+        this.packageManager === "pnpm"
+          ? ["--ignore-scripts", "--no-git-checks"]
+          : [],
         registry ? ["--registry", registry] : [],
         tag ? ["--tag", tag] : [],
       ].flat();
 
+      execSync("git status", {
+        stdio: "inherit",
+      });
       const cmd = `${this.packageManager} publish ${args.join(" ")}`;
       console.log(cmd);
       execSync(cmd, {
