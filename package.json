@@ -1,0 +1,55 @@
+{
+  "name": "@sitepark/js-project",
+  "version": "1.0.0-SNAPSHOT",
+  "description": "CLI tool for GitLab pipeline release processes",
+  "type": "module",
+  "main": "dist/cli.js",
+  "bin": {
+    "js-projekt": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "cli",
+    "gitlab",
+    "release",
+    "pipeline",
+    "automation"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "Holger Veltrup <veltrup@sitepark.com> (http://www.sitepark.com)",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^25.0.8",
+    "@types/semver": "^7.7.1",
+    "@vitest/coverage-v8": "^4.0.17",
+    "@vitest/ui": "^4.0.17",
+    "husky": "^9.1.7",
+    "prettier": "^3.7.4",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1",
+    "vite-plugin-dts": "^4.5.4",
+    "vitest": "^4.0.17"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "package": "vite build && chmod +x dist/cli.js",
+    "format": "prettier --write ./",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "verify": "yarn run package && yarn run gitflow-verify",
+    "prepublishOnly": "yarn run package"
+  },
+  "dependencies": {
+    "@types/yargs": "^17.0.35",
+    "@types/yargs-parser": "^21.0.3",
+    "semver": "^7.7.3",
+    "type-fest": "^5.4.1",
+    "yargs": "^18.0.0"
+  }
+}
