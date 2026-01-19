@@ -32,5 +32,7 @@ jobs:
 
           pnpm install
           pnpm package
+          echo "-- run git status"
           git status
+          echo "-- run git status"
           dist/cli.js release --package-manager pnpm
