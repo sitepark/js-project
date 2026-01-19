@@ -1,12 +1,10 @@
-name: (📡) Publish Package
+name: (📡) Verify Package
+
 on:
   push:
-    tags:
-      - 'v[0-9]+\.[0-9]+\.[0-9]+'
-
-permissions:
-  id-token: write # Required for OIDC
-  contents: read
+    branches-ignore:
+      - "main"
+  workflow_dispatch:
 
 jobs:
   build:
@@ -26,6 +24,4 @@ jobs:
           registry-url: "https://registry.npmjs.org"
           cache: "pnpm"
       - run: pnpm install
-      - run: pnpm build
-      - run: pnpm test
-      - run: pnpm publish
+      - run: pnpm verify
