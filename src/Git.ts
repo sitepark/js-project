@@ -3,7 +3,9 @@ import { execSync } from "node:child_process";
 export class Git {
   public isGitRepository(): boolean {
     try {
-      execSync("git rev-parse --git-dir");
+      execSync("git rev-parse --git-dir", {
+        stdio: "inherit",
+      });
       return true;
     } catch {
       return false;
@@ -59,7 +61,9 @@ export class Git {
   }
 
   public updateTags() {
-    execSync("git fetch --tags");
+    execSync("git fetch --tags", {
+      stdio: "inherit",
+    });
   }
 
   public hasUncommittedChanges(): boolean {
@@ -71,11 +75,15 @@ export class Git {
   }
 
   public createBranch(branchName: string, startPoint: string): void {
-    execSync(`git checkout -B ${branchName} ${startPoint}`);
+    execSync(`git checkout -B ${branchName} ${startPoint}`, {
+      stdio: "inherit",
+    });
   }
 
   public pushOrigin(branchName: string): void {
-    execSync(`git push origin ${branchName}`);
+    execSync(`git push origin ${branchName}`, {
+      stdio: "inherit",
+    });
   }
 
   public getChangedTrackedFiles(): string[] {
@@ -86,13 +94,24 @@ export class Git {
   }
 
   public createTag(tagName: string, message: string): void {
-    execSync(`git tag -a ${tagName} -m "${message}"`);
+    execSync(`git tag -a ${tagName} -m "${message}"`, {
+      stdio: "inherit",
+    });
   }
 
   public commit(path: string, type: string, message: string): void {
     execSync(
       `git add ${path} && git commit -m "${type}: ${message} [skip ci]"`,
+      {
+        stdio: "inherit",
+      },
     );
+  }
+
+  public push(): void {
+    execSync(`git push --tags`, {
+      stdio: "inherit",
+    });
   }
 
   private toStringArray(output: string): string[] {

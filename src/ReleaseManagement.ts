@@ -72,8 +72,7 @@ export class ReleaseManagement {
       "ci(release)",
       "updating package.json set version to " + hotfixSnapshotVersion,
     );
-
-    //this.git.pushOrigin(hotfixBranch);
+    this.git.push();
 
     return hotfixSnapshotVersion;
   }
@@ -122,6 +121,7 @@ export class ReleaseManagement {
     );
 
     this.git.createTag(releaseVersion, "Release Version " + releaseVersion);
+    this.git.push();
 
     this.publisherProvider.publish();
 
@@ -133,6 +133,8 @@ export class ReleaseManagement {
       "ci(release)",
       "updating package.json set version to " + nextSnapshotVersion,
     );
+
+    this.git.push();
 
     //this.git.pushOrigin(releaseVersion);
 
