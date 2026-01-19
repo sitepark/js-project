@@ -113,7 +113,6 @@ export class ReleaseManagement {
       this.buildProvider.test();
       this.buildProvider.verify();
       this.buildProvider.package();
-      this.publisherProvider.publish();
     });
 
     this.git.commit(
@@ -123,6 +122,8 @@ export class ReleaseManagement {
     );
 
     this.git.createTag(releaseVersion, "Release Version " + releaseVersion);
+
+    this.publisherProvider.publish();
 
     const nextSnapshotVersion = this.project.getNextSnapshotVersion();
     this.project.updateVersion(nextSnapshotVersion);
