@@ -31,5 +31,6 @@ jobs:
           git config --global user.name opensource@sitepark.com
 
           pnpm install
+          pnpm package
           git status
           dist/cli.js release --package-manager pnpm
