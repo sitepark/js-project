@@ -12,22 +12,22 @@ This is a TypeScript-based CLI tool (`js-projekt`) for managing GitLab pipeline 
 
 ```bash
 # Install dependencies
-yarn install
+pnpm install
 
 # Build the project (compiles TypeScript and sets executable permissions)
-yarn run package
+pnpm package
 
 # Run tests
-yarn run test              # Run all tests once
-yarn run test:watch        # Run tests in watch mode
-yarn run test:ui           # Run tests with interactive UI
-yarn run test:coverage     # Run tests with coverage report
+pnpm test              # Run all tests once
+pnpm test:watch        # Run tests in watch mode
+pnpm test:ui           # Run tests with interactive UI
+pnpm test:coverage     # Run tests with coverage report
 
 # Format code with Prettier
-yarn run format
+pnpm format
 
 # Full verification (build + optional verification scripts)
-yarn run verify
+pnpm verify
 ```
 
 ### Testing the CLI
@@ -39,7 +39,7 @@ After building:
 node dist/cli.js <command>
 
 # Or create a local symlink for development
-yarn link
+pnpm link --global
 js-projekt <command>
 ```
 
@@ -178,8 +178,8 @@ When adding new tests:
 
 ## Git Hooks
 
-- `pre-commit`: Runs `yarn lint-staged` for staged file linting/formatting
-- `post-merge`: Runs `yarn install` to sync dependencies after merges
+- `pre-commit`: Runs `pnpm lint-staged` for staged file linting/formatting
+- `post-merge`: Runs `pnpm install` to sync dependencies after merges
 
 ## Package Manager Support
 

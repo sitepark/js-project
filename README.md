@@ -33,11 +33,11 @@ Install for your user only (no system-wide access):
 # Using npm
 npm install -g @sitepark/js-project
 
-# Using yarn
-yarn global add @sitepark/js-project
+# Using pnpm
+pnpm add -g @sitepark/js-project
 ```
 
-Note: With user-level installation, ensure npm/yarn global bin is in your PATH.
+Note: With user-level installation, ensure npm/pnpm global bin is in your PATH.
 
 ## Available Commands
 
@@ -158,9 +158,9 @@ js-projekt release [--package-manager <yarn|npm|pnpm>]
 2. Converts SNAPSHOT version to release version (removes `-SNAPSHOT`)
 3. Formats `package.json`
 4. Runs build pipeline:
-   - `yarn run test` (if script exists)
-   - `yarn run verify` (if script exists)
-   - `yarn run package` (if script exists)
+   - `pnpm test` (if script exists)
+   - `pnpm verify` (if script exists)
+   - `pnpm package` (if script exists)
    - Publishes to npm registry
 5. Commits release version: `ci(release): updating package.json set version to X.Y.Z`
 6. Creates Git tag: `X.Y.Z` with message "Release Version X.Y.Z"
@@ -320,33 +320,33 @@ js-project/
 ### Build project
 
 ```bash
-yarn run package
+pnpm package
 ```
 
 ### Run tests
 
 ```bash
 # Run all tests once
-yarn run test
+pnpm test
 
 # Run tests in watch mode
-yarn run test:watch
+pnpm test:watch
 
 # Run tests with UI
-yarn run test:ui
+pnpm test:ui
 
 # Run tests with coverage report
-yarn run test:coverage
+pnpm test:coverage
 ```
 
 ### Format code
 
 ```bash
-yarn run format
+pnpm format
 ```
 
 ### Verification (Build + Tests)
 
 ```bash
-yarn run verify
+pnpm verify
 ```

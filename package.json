@@ -22,12 +22,20 @@
   },
   "author": "Holger Veltrup <veltrup@sitepark.com> (http://www.sitepark.com)",
   "license": "MIT",
+  "dependencies": {
+    "@types/yargs": "^17.0.35",
+    "@types/yargs-parser": "^21.0.3",
+    "semver": "^7.7.3",
+    "type-fest": "^5.4.1",
+    "yargs": "^18.0.0"
+  },
   "devDependencies": {
     "@types/node": "^25.0.8",
     "@types/semver": "^7.7.1",
     "@vitest/coverage-v8": "^4.0.17",
     "@vitest/ui": "^4.0.17",
     "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "prettier": "^3.7.4",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
@@ -41,13 +49,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
-  },
-  "dependencies": {
-    "@types/yargs": "^17.0.35",
-    "@types/yargs-parser": "^21.0.3",
-    "semver": "^7.7.3",
-    "type-fest": "^5.4.1",
-    "yargs": "^18.0.0"
+    "test:coverage": "vitest run --coverage",
+    "verify": "pnpm package; pnpm test:coverage"
   }
 }
