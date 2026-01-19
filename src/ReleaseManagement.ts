@@ -72,7 +72,7 @@ export class ReleaseManagement {
       "ci(release)",
       "updating package.json set version to " + hotfixSnapshotVersion,
     );
-    this.git.push();
+    this.git.pushOrigin(hotfixBranch);
 
     return hotfixSnapshotVersion;
   }
