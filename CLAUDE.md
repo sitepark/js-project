@@ -9,6 +9,7 @@ This is a TypeScript-based CLI tool (`js-projekt`) for managing GitLab pipeline 
 ## Build Commands
 
 ### Development
+
 ```bash
 # Install dependencies
 yarn install
@@ -32,6 +33,7 @@ yarn run verify
 ### Testing the CLI
 
 After building:
+
 ```bash
 # Direct execution
 node dist/cli.js <command>
@@ -42,6 +44,7 @@ js-projekt <command>
 ```
 
 ### Publishing
+
 ```bash
 # The prepublishOnly hook automatically runs package before publishing
 npm publish
@@ -67,15 +70,18 @@ All commands support `--verbose` (`-v`) flag for detailed error messages with st
 The architecture follows a clean separation of concerns with provider pattern for pluggable implementations:
 
 **Core Domain Classes:**
+
 - `Project` - Represents a Node.js project, manages package.json, version queries, and dependency analysis
 - `Git` - Git operations wrapper (branches, tags, commits, version queries)
 - `ReleaseManagement` - Orchestrates the release workflow (release creation, hotfix management, verification)
 
 **Provider Interfaces:**
+
 - `BuildProvider` - Executes build scripts (test, verify, package, format)
 - `PublisherProvider` - Handles publishing to npm registries (supports SNAPSHOT versions with timestamps, tag management)
 
 **Supporting Classes:**
+
 - `VerificationReport` - Analyzes project for release readiness (checks for SNAPSHOT dependencies, publishConfig)
 - `ReleaseManagementFactory` - Factory for creating ReleaseManagement instances with providers
 - `PackageJson` - TypeScript interface for package.json structure
@@ -83,11 +89,13 @@ The architecture follows a clean separation of concerns with provider pattern fo
 ### Version Management
 
 This project uses a SNAPSHOT-based versioning system:
+
 - Development versions end with `-SNAPSHOT` (e.g., `1.2.0-SNAPSHOT`)
 - Release versions are semantic versions without suffix (e.g., `1.2.0`)
 - SNAPSHOT publish adds timestamp: `1.2.0-SNAPSHOT.20260119123045`
 
 Version utilities in `src/version.ts`:
+
 - `isSnapshot()` - Check if version is SNAPSHOT
 - `releaseVersion()` - Convert SNAPSHOT to release version
 - `incrementMinorVersion()` - Bump minor version
@@ -97,11 +105,13 @@ Version utilities in `src/version.ts`:
 ### Branch Strategy
 
 Releases can only be created from:
+
 - `main` - Main development branch
 - `support/*` - Long-term support branches
 - `hotfix/*` - Hotfix branches for patch releases
 
 Hotfix workflow:
+
 1. Start from a release tag
 2. Creates `hotfix/X.Y.x` branch
 3. Updates version to next patch SNAPSHOT
@@ -110,6 +120,7 @@ Hotfix workflow:
 ### Build and Publishing Flow
 
 **Release Process (`ReleaseManagement.release()`):**
+
 1. Validate current state (must be SNAPSHOT on allowed branch)
 2. Convert version to release version
 3. Format package.json
@@ -119,6 +130,7 @@ Hotfix workflow:
 7. Commit SNAPSHOT version
 
 **Publishing Logic (`PublisherProvider.publish()`):**
+
 - For SNAPSHOT: appends timestamp to version
 - Determines npm dist-tag: `latest` for releases, `next` for newer SNAPSHOTs
 - Supports custom registries via `publishConfig.registry`, `publishConfig.snapshotRegistry`, `publishConfig.releaseRegistry`
@@ -146,6 +158,7 @@ Hotfix workflow:
 ### Test Coverage
 
 Current test files in `test/`:
+
 - `version.test.ts` (19 tests) - Tests for version utility functions (semver operations, SNAPSHOT handling) - 100% coverage
 - `VerificationReport.test.ts` (14 tests) - Tests for release verification logic - 100% coverage
 - `Project.test.ts` (28 tests) - Tests for project management (version handling, branch detection, dependency analysis) - 75.6% coverage
@@ -156,6 +169,7 @@ Total: 87 tests
 ### Writing Tests
 
 When adding new tests:
+
 - Create test files in the `test/` directory
 - Import source files from `../src/` directory
 - Use Vitest's `describe`, `it`, `expect` for test structure

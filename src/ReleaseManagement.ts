@@ -18,7 +18,7 @@ export class ReleaseManagement {
     project: Project,
     git: Git,
     buildProvider: BuildProvider,
-    publisherProvider: PublisherProvider
+    publisherProvider: PublisherProvider,
   ) {
     this.project = project;
     this.git = git;
@@ -38,7 +38,7 @@ export class ReleaseManagement {
       throw new Error(
         "A hotfix can only be created on the basis of a release. " +
           "The current Git state is not a checked out tag. Current version: " +
-          this.project.getVersion()
+          this.project.getVersion(),
       );
     }
 
@@ -46,12 +46,12 @@ export class ReleaseManagement {
 
     const releaseVersions = this.project.getVersionsFromMinor(
       Number(major),
-      Number(minor)
+      Number(minor),
     );
 
     if (releaseVersions.length === 0) {
       throw new Error(
-        "There is no release yet for which a hotfix can be created."
+        "There is no release yet for which a hotfix can be created.",
       );
     }
 
@@ -70,7 +70,7 @@ export class ReleaseManagement {
     this.git.commit(
       "package.json",
       "ci(release)",
-      "updating package.json set version to " + hotfixSnapshotVersion
+      "updating package.json set version to " + hotfixSnapshotVersion,
     );
 
     //this.git.pushOrigin(hotfixBranch);
@@ -82,7 +82,7 @@ export class ReleaseManagement {
     if (!this.project.isSnapshot()) {
       throw new Error(
         "The current version is not a SNAPSHOT version: " +
-          this.project.getVersion()
+          this.project.getVersion(),
       );
     }
     if (
@@ -93,7 +93,7 @@ export class ReleaseManagement {
       throw new Error(
         "No release can be created with branch '" +
           this.project.getBranch() +
-          "'."
+          "'.",
       );
     }
 
@@ -103,7 +103,7 @@ export class ReleaseManagement {
     }
 
     this.assertNoUncommittedChanges(
-      "The release can only be created when all changes are committed."
+      "The release can only be created when all changes are committed.",
     );
 
     this.project.updateVersion(releaseVersion);
@@ -119,7 +119,7 @@ export class ReleaseManagement {
     this.git.commit(
       "package.json",
       "ci(release)",
-      "updating package.json set version to " + releaseVersion
+      "updating package.json set version to " + releaseVersion,
     );
 
     this.git.createTag(releaseVersion, "Release Version " + releaseVersion);
@@ -130,7 +130,7 @@ export class ReleaseManagement {
     this.git.commit(
       "package.json",
       "ci(release)",
-      "updating package.json set version to " + nextSnapshotVersion
+      "updating package.json set version to " + nextSnapshotVersion,
     );
 
     //this.git.pushOrigin(releaseVersion);
@@ -146,7 +146,7 @@ export class ReleaseManagement {
     if (this.project.hasUncommittedChanges()) {
       const untractedFiles = this.git.getChangedTrackedFiles();
       throw new Error(
-        msg + "\nUncommitted changes:\n" + untractedFiles.join("\n")
+        msg + "\nUncommitted changes:\n" + untractedFiles.join("\n"),
       );
     }
   }

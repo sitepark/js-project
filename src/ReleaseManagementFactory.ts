@@ -14,7 +14,7 @@ export class ReleaseManagementFactory {
       project,
       git,
       buildProvider,
-      publisherProvider
+      publisherProvider,
     );
   }
 }

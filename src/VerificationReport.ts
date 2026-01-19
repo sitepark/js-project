@@ -18,7 +18,7 @@ export class VerificationReport {
 
   hasSnapshotDependencies(): boolean {
     return Object.values(this.generateDependecyInfo()).some(
-      (deps) => deps.length > 0
+      (deps) => deps.length > 0,
     );
   }
 
@@ -47,7 +47,7 @@ export class VerificationReport {
         isReleasable: this.isReleaseable(),
       },
       null,
-      2
+      2,
     );
   }
 

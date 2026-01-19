@@ -41,9 +41,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage",
-    "verify": "yarn run package && yarn run gitflow-verify",
-    "prepublishOnly": "yarn run package"
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@types/yargs": "^17.0.35",

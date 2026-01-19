@@ -121,7 +121,7 @@ export class Project {
    * @returns
    */
   public getSnapshotDependencies(
-    type: DependencyType = "dependencies"
+    type: DependencyType = "dependencies",
   ): DependencyInfo[] {
     const snapshots: DependencyInfo[] = [];
     if (!this.pkg.hasOwnProperty(type)) {

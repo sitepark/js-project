@@ -12,7 +12,7 @@ import { versionCommand } from "./commands/version.js";
 function defaultPackageManager(): string {
   if (process.env.JS_PROJECT_PACKAGE_MANAGER === undefined) {
     throw new Error(
-      "JS_PROJECT_PACKAGE_MANAGER environment variable is not set"
+      "JS_PROJECT_PACKAGE_MANAGER environment variable is not set",
     );
   }
   return process.env.JS_PROJECT_PACKAGE_MANAGER;
@@ -49,7 +49,7 @@ yargs(hideBin(process.argv))
       } catch (error) {
         handleError(error, argv.verbose);
       }
-    }
+    },
   )
   .command(
     "releaseVersion",
@@ -61,7 +61,7 @@ yargs(hideBin(process.argv))
       } catch (error) {
         handleError(error, argv.verbose);
       }
-    }
+    },
   )
   .command(
     "verifyRelease",
@@ -80,7 +80,7 @@ yargs(hideBin(process.argv))
       } catch (error) {
         handleError(error, argv.verbose);
       }
-    }
+    },
   )
   .command(
     "startHotfix <tag>",
@@ -103,12 +103,12 @@ yargs(hideBin(process.argv))
       try {
         startHotfixCommand(
           argv.packageManager ?? defaultPackageManager(),
-          argv.tag
+          argv.tag,
         );
       } catch (error) {
         handleError(error, argv.verbose);
       }
-    }
+    },
   )
   .command(
     "release",
@@ -127,7 +127,7 @@ yargs(hideBin(process.argv))
       } catch (error) {
         handleError(error, argv.verbose);
       }
-    }
+    },
   )
   .command(
     "publish",
@@ -146,7 +146,7 @@ yargs(hideBin(process.argv))
       } catch (error) {
         handleError(error, argv.verbose);
       }
-    }
+    },
   )
   .demandCommand(1, "Please specify a command")
   .strict()

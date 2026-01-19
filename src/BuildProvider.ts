@@ -29,7 +29,7 @@ export class BuildProvider {
   private runScript(
     scriptName: string,
     args: string[] = [],
-    optional = true
+    optional = true,
   ): void {
     if (optional && !this.project.hasScript(scriptName)) {
       console.log(`Skipping optional Script "${scriptName}"`);

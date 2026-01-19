@@ -28,7 +28,7 @@ export class Git {
   public getVersions(): string[] {
     this.updateTags();
     const result = execSync(
-      "git tag -l --sort=v:refname '[0-9]*.[0-9]*.[0-9]*'"
+      "git tag -l --sort=v:refname '[0-9]*.[0-9]*.[0-9]*'",
     )
       .toString()
       .trim();
@@ -39,7 +39,7 @@ export class Git {
   public getVersionsFromMajor(major: number): string[] {
     this.updateTags();
     const result = execSync(
-      "git tag -l --sort=v:refname '" + major + ".[0-9]*.[0-9]*'"
+      "git tag -l --sort=v:refname '" + major + ".[0-9]*.[0-9]*'",
     )
       .toString()
       .trim();
@@ -50,7 +50,7 @@ export class Git {
   public getVersionsFromMinor(major: number, minor: number): string[] {
     this.updateTags();
     const result = execSync(
-      "git tag -l --sort=v:refname '" + major + "." + minor + ".[0-9]*'"
+      "git tag -l --sort=v:refname '" + major + "." + minor + ".[0-9]*'",
     )
       .toString()
       .trim();
@@ -91,7 +91,7 @@ export class Git {
 
   public commit(path: string, type: string, message: string): void {
     execSync(
-      `git add ${path} && git commit -m "${type}: ${message} [skip ci]"`
+      `git add ${path} && git commit -m "${type}: ${message} [skip ci]"`,
     );
   }
 

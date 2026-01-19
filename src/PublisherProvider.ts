@@ -32,7 +32,7 @@ export class PublisherProvider {
         : (versions[versions.length - 1] ?? "0.0.0");
 
     console.log(
-      `Last release version: ${lastReleaseVersion} Current version: ${version}`
+      `Last release version: ${lastReleaseVersion} Current version: ${version}`,
     );
     const newestVersion = greaterThanVersion(version, lastReleaseVersion);
     const tag = newestVersion

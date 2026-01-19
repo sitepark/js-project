@@ -38,14 +38,14 @@ export function incrementMinorVersion(version: string): string {
 
 export function greaterThanVersion(
   versionA: string,
-  versionB: string
+  versionB: string,
 ): boolean {
   const semVersionA = semver.parse(versionA);
   const semVersionB = semver.parse(versionB);
 
   if (!semVersionA || !semVersionB) {
     throw new Error(
-      `Cannot compare versions: '${versionA}' or '${versionB}' is not a valid semver version.`
+      `Cannot compare versions: '${versionA}' or '${versionB}' is not a valid semver version.`,
     );
   }
 
