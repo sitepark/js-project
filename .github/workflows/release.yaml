@@ -1,0 +1,36 @@
+name: (▶) Release
+
+on: workflow_dispatch
+
+permissions:
+  id-token: write # Required for OIDC
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      # Setup .npmrc file to publish to npm
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          cache: "pnpm"
+
+      - name: Release
+        run: |
+
+          git config --global user.email sitepark-bot
+          git config --global user.name opensource@sitepark.com
+
+          pnpm install
+          pnpm package
+          pnpm test
+          dist/cli.js release
