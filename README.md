@@ -353,13 +353,4 @@ pnpm verify
 
 ## Release
 
-```bash
-pnpm version [semversion]
-git add package.json
-git commit -m "chore(release): bump version to X.Y.Z"
-git push
-```
-
-Create a new [release](https://github.com/sitepark/js-project/releases/new) on GitHub.
-
-The GitHub-Action [Publish Package](https://github.com/sitepark/js-project/actions/workflows/publish.yaml) will automatically publish the new version to npm.
+Set version in `package.json` and create a new [release](https://github.com/sitepark/js-project/releases/new) on GitHub.
