@@ -1,4 +1,4 @@
-name: (📡) Verify Package
+name: (📡) Verify
 
 on:
   push:
