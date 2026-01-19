@@ -7,6 +7,10 @@
   "bin": {
     "js-projekt": "./dist/cli.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sitepark/js-project.git"
+  },
   "files": [
     "dist"
   ],
