@@ -1,6 +1,6 @@
 {
   "name": "@sitepark/js-project",
-  "version": "1.2.0",
+  "version": "1.2.0-SNAPSHOT",
   "description": "CLI tool for GitLab pipeline release processes",
   "type": "module",
   "main": "dist/cli.js",
