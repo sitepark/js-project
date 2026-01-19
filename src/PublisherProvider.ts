@@ -43,7 +43,13 @@ export class PublisherProvider {
 
     try {
       const args = [
-        ["--ignore-scripts", "--non-interactive"],
+        this.packageManager === "npm"
+          ? ["--ignore-scripts", "--non-interactive"]
+          : [],
+        this.packageManager === "yarn"
+          ? ["--ignore-scripts", "--non-interactive"]
+          : [],
+        this.packageManager === "pnpm" ? ["--ignore-scripts"] : [],
         registry ? ["--registry", registry] : [],
         tag ? ["--tag", tag] : [],
       ].flat();
