@@ -32,6 +32,8 @@ describe("ReleaseManagement", () => {
       createBranch: vi.fn(),
       commit: vi.fn(),
       createTag: vi.fn(),
+      push: vi.fn(),
+      pushOrigin: vi.fn(),
       getChangedTrackedFiles: vi.fn(),
     } as unknown as Git;
 
