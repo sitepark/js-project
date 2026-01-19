@@ -33,4 +33,4 @@ jobs:
           pnpm install
           pnpm package
           pnpm test
-          dist/cli.js release
+          dist/cli.js release --package-manager pnpm
