@@ -109,6 +109,9 @@ export class Git {
   }
 
   public push(): void {
+    execSync(`git push`, {
+      stdio: "inherit",
+    });
     execSync(`git push --tags`, {
       stdio: "inherit",
     });
