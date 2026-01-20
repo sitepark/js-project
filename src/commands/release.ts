@@ -2,6 +2,5 @@ import { ReleaseManagementFactory } from "../ReleaseManagementFactory.js";
 
 export function releaseCommand(packageManager: string): void {
   const releaseManagement = ReleaseManagementFactory.forCwd(packageManager);
-  const releaseVersion = releaseManagement.release();
-  console.log(releaseVersion);
+  releaseManagement.release();
 }

@@ -31,7 +31,7 @@ jobs:
           registry-url: "https://registry.npmjs.org"
           cache: "pnpm"
 
-      - name: Release
+      - name: Prepare Release
         run: |
 
           git config --global user.email sitepark-bot
@@ -39,6 +39,24 @@ jobs:
 
           pnpm install
           pnpm package
-          RELEASE_VERSION=$(dist/cli.js release --package-manager pnpm)
+
+          RELEASE_VERSION=$(dist/cli.js releaseVersion)
+
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
+
+      - name: Release
+        run-name: Release $RELEASE_VERSION (${{ github.actor }})
+        run: |
+
+          git config --global user.email sitepark-bot
+          git config --global user.name opensource@sitepark.com
+
+          pnpm install
+          pnpm package
+
+          RELEASE_VERSION=$(dist/cli.js releaseVersion)
+          echo "Start release "
+
+          dist/cli.js release --package-manager pnpm
 
           gh workflow run create-github-release.yml --ref $RELEASE_VERSION
