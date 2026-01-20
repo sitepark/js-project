@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/sitepark/js-project/graph/badge.svg?token=Pt0yXRaxaw)](https://codecov.io/gh/sitepark/js-project)
+
 # js-project
 
 This tool implements the [Sitepark Branching Model](https://sitepark.github.io/github-project-workflow/branching-model/) - a lightweight branching model with support for hotfixes and support releases.
