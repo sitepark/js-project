@@ -54,9 +54,6 @@ jobs:
           pnpm install
           pnpm package
 
-          RELEASE_VERSION=$(dist/cli.js releaseVersion)
-          echo "Start release "
-
           dist/cli.js release --package-manager pnpm
 
           gh workflow run create-github-release.yml --ref $RELEASE_VERSION
