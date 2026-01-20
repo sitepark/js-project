@@ -119,21 +119,24 @@ export class ReleaseManagement {
       "ci(release)",
       "updating package.json set version to " + releaseVersion,
     );
-    this.git.createTag(releaseVersion, "Release Version " + releaseVersion);
     this.git.push();
+
+    this.git.createTag(releaseVersion, "Release Version " + releaseVersion);
 
     this.publisherProvider.publish();
 
     const nextSnapshotVersion = this.project.getNextSnapshotVersion();
     this.project.updateVersion(nextSnapshotVersion);
 
+    /*
     this.git.commit(
       "package.json",
       "ci(release)",
-      "updating package.json set version to " + nextSnapshotVersion,
+      "updating package.json set version to " + nextSnapshotVersion
     );
 
     this.git.push();
+    */
 
     return releaseVersion;
   }
