@@ -34,13 +34,8 @@ export class PublisherProvider {
     console.log(
       `Last release version: ${lastReleaseVersion} Current version: ${version}`,
     );
-    const newestVersion = greaterThanVersion(version, lastReleaseVersion);
-    const tag = newestVersion
-      ? this.project.isRelease()
-        ? "latest"
-        : "next"
-      : "hotfix";
 
+    const tag = this.getPublishTag(version, lastReleaseVersion);
     console.log("Use tag: " + tag);
 
     try {
@@ -55,7 +50,7 @@ export class PublisherProvider {
           ? ["--ignore-scripts", "--no-git-checks"]
           : [],
         registry ? ["--registry", registry] : [],
-        tag ? ["--tag", tag] : [],
+        ["--tag", tag],
       ].flat();
 
       execSync("git status", {
@@ -71,5 +66,23 @@ export class PublisherProvider {
         this.project.updateVersion(version);
       }
     }
+  }
+
+  private getPublishTag(version: string, lastReleaseVersion: string): string {
+    if (this.project.isHotfixBranch()) {
+      return "hotfix";
+    }
+
+    const newestVersion = greaterThanVersion(version, lastReleaseVersion);
+
+    if (this.project.isSnapshot()) {
+      return newestVersion ? "next" : "snapshot";
+    }
+
+    if (this.project.isRelease()) {
+      return newestVersion ? "latest" : "release";
+    }
+
+    return "unclassified";
   }
 }
