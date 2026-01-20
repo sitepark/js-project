@@ -249,7 +249,6 @@ describe("ReleaseManagement", () => {
       expect(mockProject.updateVersion).toHaveBeenCalledWith("1.6.0-SNAPSHOT");
     });
 
-    /*
     it("should create snapshot commit", () => {
       releaseManagement.release();
 
@@ -259,7 +258,6 @@ describe("ReleaseManagement", () => {
         "updating package.json set version to 1.6.0-SNAPSHOT",
       );
     });
-    */
 
     it("should return release version", () => {
       const result = releaseManagement.release();
