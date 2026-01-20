@@ -119,8 +119,8 @@ export class ReleaseManagement {
       "ci(release)",
       "updating package.json set version to " + releaseVersion,
     );
-
     this.git.createTag(releaseVersion, "Release Version " + releaseVersion);
+    this.git.push();
 
     this.publisherProvider.publish();
 
