@@ -11,13 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-        with:
-          # There is a limitation of workflow: An action in a workflow
-          # run can’t trigger a new workflow run.
-          # But this is needed here so that the created tag can trigger
-          # the create-github-release-draft that is triggered on every new tag.
-          # Solution is a explizit token: https://github.com/orgs/community/discussions/25617
-          token: ${{ secrets.BOT_PAT }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -44,7 +37,7 @@ jobs:
 
           echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
 
-      - name: Release
+      - name: Release $RELEASE_VERSION
         env:
           GH_TOKEN: ${{ secrets.BOT_PAT }}
 
