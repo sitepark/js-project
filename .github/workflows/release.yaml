@@ -2,22 +2,20 @@ name: (▶) Create Release
 
 on: workflow_dispatch
 
-permissions:
-  id-token: write # Required for OIDC
-  contents: write
-
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions: write-all
     steps:
       - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.BOT_PAT }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 10
 
-      # Setup .npmrc file to publish to npm
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
@@ -40,17 +38,17 @@ jobs:
       - name: Release $RELEASE_VERSION
         env:
           GH_TOKEN: ${{ secrets.BOT_PAT }}
-
         run: |
 
           echo "Release Version $RELEASE_VERSION"
 
-          git config --global user.email sitepark-bot
-          git config --global user.name opensource@sitepark.com
-
-          pnpm install
-          pnpm package
-
           dist/cli.js release --package-manager pnpm
 
           gh workflow run create-github-release.yml --ref $RELEASE_VERSION
+
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage/coverage-final.json
+          verbose: true
