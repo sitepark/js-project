@@ -1,11 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
+  greaterThanEqualsVersion,
+  incrementMinorVersion,
+  incrementPatchVersion,
   isSnapshot,
   normalizeSnapshotVersion,
   releaseVersion,
-  incrementMinorVersion,
-  incrementPatchVersion,
-  greaterThanVersion,
 } from "../src/version.js";
 
 describe("version utilities", () => {
@@ -95,36 +95,38 @@ describe("version utilities", () => {
     });
   });
 
-  describe("greaterThanVersion", () => {
+  describe("greaterThanEqualsVersion", () => {
     it("should return true when first version is greater", () => {
-      expect(greaterThanVersion("2.0.0", "1.0.0")).toBe(true);
-      expect(greaterThanVersion("1.1.0", "1.0.0")).toBe(true);
-      expect(greaterThanVersion("1.0.1", "1.0.0")).toBe(true);
+      expect(greaterThanEqualsVersion("2.0.0", "1.0.0")).toBe(true);
+      expect(greaterThanEqualsVersion("1.1.0", "1.0.0")).toBe(true);
+      expect(greaterThanEqualsVersion("1.0.1", "1.0.0")).toBe(true);
     });
 
     it("should return false when first version is smaller", () => {
-      expect(greaterThanVersion("1.0.0", "2.0.0")).toBe(false);
-      expect(greaterThanVersion("1.0.0", "1.1.0")).toBe(false);
-      expect(greaterThanVersion("1.0.0", "1.0.1")).toBe(false);
+      expect(greaterThanEqualsVersion("1.0.0", "2.0.0")).toBe(false);
+      expect(greaterThanEqualsVersion("1.0.0", "1.1.0")).toBe(false);
+      expect(greaterThanEqualsVersion("1.0.0", "1.0.1")).toBe(false);
     });
 
-    it("should return false when versions are equal", () => {
-      expect(greaterThanVersion("1.0.0", "1.0.0")).toBe(false);
-      expect(greaterThanVersion("2.5.3", "2.5.3")).toBe(false);
+    it("should return true when versions are equal", () => {
+      expect(greaterThanEqualsVersion("1.0.0", "1.0.0")).toBe(true);
+      expect(greaterThanEqualsVersion("2.5.3", "2.5.3")).toBe(true);
     });
 
     it("should compare SNAPSHOT versions correctly", () => {
-      expect(greaterThanVersion("1.1.0-SNAPSHOT", "1.0.0-SNAPSHOT")).toBe(true);
-      expect(greaterThanVersion("1.0.0-SNAPSHOT", "1.1.0-SNAPSHOT")).toBe(
+      expect(greaterThanEqualsVersion("1.1.0-SNAPSHOT", "1.0.0-SNAPSHOT")).toBe(
+        true,
+      );
+      expect(greaterThanEqualsVersion("1.0.0-SNAPSHOT", "1.1.0-SNAPSHOT")).toBe(
         false,
       );
     });
 
     it("should throw error for invalid version strings", () => {
-      expect(() => greaterThanVersion("invalid", "1.0.0")).toThrow(
+      expect(() => greaterThanEqualsVersion("invalid", "1.0.0")).toThrow(
         "Cannot compare versions: 'invalid' or '1.0.0' is not a valid semver version.",
       );
-      expect(() => greaterThanVersion("1.0.0", "invalid")).toThrow(
+      expect(() => greaterThanEqualsVersion("1.0.0", "invalid")).toThrow(
         "Cannot compare versions: '1.0.0' or 'invalid' is not a valid semver version.",
       );
     });

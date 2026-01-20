@@ -1,6 +1,6 @@
 import { execSync } from "node:child_process";
 import type { Project } from "./Project.js";
-import { greaterThanVersion } from "./version.js";
+import { greaterThanEqualsVersion } from "./version.js";
 
 export class PublisherProvider {
   private project: Project;
@@ -69,20 +69,16 @@ export class PublisherProvider {
   }
 
   private getPublishTag(version: string, lastReleaseVersion: string): string {
-    if (this.project.isHotfixBranch()) {
-      return "hotfix";
-    }
-
-    const newestVersion = greaterThanVersion(version, lastReleaseVersion);
+    const newestVersion = greaterThanEqualsVersion(version, lastReleaseVersion);
 
     if (this.project.isSnapshot()) {
       return newestVersion ? "next" : "snapshot";
     }
 
-    if (this.project.isRelease()) {
-      return newestVersion ? "latest" : "release";
+    if (this.project.isHotfixBranch()) {
+      return "hotfix";
     }
 
-    return "unclassified";
+    return newestVersion ? "latest" : "release";
   }
 }

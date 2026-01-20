@@ -36,7 +36,7 @@ export function incrementMinorVersion(version: string): string {
   );
 }
 
-export function greaterThanVersion(
+export function greaterThanEqualsVersion(
   versionA: string,
   versionB: string,
 ): boolean {
@@ -49,7 +49,7 @@ export function greaterThanVersion(
     );
   }
 
-  return semver.gt(semVersionA, semVersionB);
+  return semver.gte(semVersionA, semVersionB);
 }
 
 /**
