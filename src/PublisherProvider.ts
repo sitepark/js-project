@@ -41,6 +41,8 @@ export class PublisherProvider {
         : "next"
       : "hotfix";
 
+    console.log("Use tag: " + tag);
+
     try {
       const args = [
         this.packageManager === "npm"
