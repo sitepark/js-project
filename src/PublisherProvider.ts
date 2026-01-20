@@ -39,7 +39,7 @@ export class PublisherProvider {
       ? this.project.isRelease()
         ? "latest"
         : "next"
-      : null;
+      : "hotfix";
 
     try {
       const args = [
