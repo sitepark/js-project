@@ -80,12 +80,6 @@ export class Git {
     });
   }
 
-  public pushOrigin(branchName: string): void {
-    execSync(`git push -u origin ${branchName}`, {
-      stdio: "inherit",
-    });
-  }
-
   public getChangedTrackedFiles(): string[] {
     const result = execSync("git status --porcelain --untracked-files=no")
       .toString()
@@ -110,6 +104,15 @@ export class Git {
 
   public push(): void {
     execSync(`git push`, {
+      stdio: "inherit",
+    });
+    execSync(`git push --tags`, {
+      stdio: "inherit",
+    });
+  }
+
+  public pushOrigin(branchName: string): void {
+    execSync(`git push -u origin ${branchName}`, {
       stdio: "inherit",
     });
     execSync(`git push --tags`, {
