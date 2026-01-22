@@ -93,13 +93,16 @@ export class Git {
     });
   }
 
-  public commit(path: string, type: string, message: string): void {
-    execSync(
-      `git add ${path} && git commit -m "${type}: ${message} [skip ci]"`,
-      {
-        stdio: "inherit",
-      },
-    );
+  public commit(
+    path: string,
+    type: string,
+    message: string,
+    skipci: boolean = true,
+  ): void {
+    const messsage = skipci ? `${message} [skip ci]` : message;
+    execSync(`git add ${path} && git commit -m "${type}: ${messsage}"`, {
+      stdio: "inherit",
+    });
   }
 
   public push(): void {
