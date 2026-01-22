@@ -15,27 +15,23 @@ export class BuildProvider {
   }
 
   public verify(): void {
-    this.runScript("verify");
+    this.runScript("verify", false);
   }
 
   public test(): void {
-    this.runScript("test");
+    this.runScript("test", false);
   }
 
   public package(): void {
     this.runScript("package");
   }
 
-  private runScript(
-    scriptName: string,
-    args: string[] = [],
-    optional = true,
-  ): void {
+  private runScript(scriptName: string, optional = true): void {
     if (optional && !this.project.hasScript(scriptName)) {
       console.log(`Skipping optional Script "${scriptName}"`);
       return;
     }
-    execSync(`${this.packageManager} run ${scriptName} ${args.join(" ")}`, {
+    execSync(`${this.packageManager} run ${scriptName}}`, {
       stdio: "inherit",
     });
   }

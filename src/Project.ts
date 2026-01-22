@@ -61,11 +61,11 @@ export class Project {
   }
 
   public getSnapshotRegistry(): string | undefined {
-    return this.pkg.publishConfig?.snapshotRegistry;
+    return process.env.JS_PROJECT_SNAPSHOT_REPOSITORY;
   }
 
   public getReleaseRegistry(): string | undefined {
-    return this.pkg.publishConfig?.releaseRegistry;
+    return process.env.JS_PROJECT_RELEASE_REPOSITORY;
   }
 
   /**

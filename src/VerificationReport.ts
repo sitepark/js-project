@@ -27,7 +27,7 @@ export class VerificationReport {
   }
 
   isPublishable(): boolean {
-    return this.project.hasPublishConfig();
+    return true;
   }
 
   generateDependecyInfo(): DependencyReport {
