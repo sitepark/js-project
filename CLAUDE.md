@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a TypeScript-based CLI tool (`js-projekt`) for managing GitLab pipeline release processes. It handles version management, releases, hotfixes, and publishing for JavaScript/TypeScript projects following a GitFlow-inspired workflow with SNAPSHOT versions.
+This is a TypeScript-based CLI tool (`js-project`) for managing GitLab pipeline release processes. It handles version management, releases, hotfixes, and publishing for JavaScript/TypeScript projects following a GitFlow-inspired workflow with SNAPSHOT versions.
 
 ## Build Commands
 
@@ -40,7 +40,7 @@ node dist/cli.js <command>
 
 # Or create a local symlink for development
 pnpm link --global
-js-projekt <command>
+js-project <command>
 ```
 
 ### Publishing
@@ -54,12 +54,12 @@ npm publish
 
 The tool provides several commands for release management:
 
-- `js-projekt version` - Display current version/branch
-- `js-projekt releaseVersion` - Create a new release version
-- `js-projekt verifyRelease [--package-manager <yarn|npm|pnpm>]` - Verify release readiness
-- `js-projekt startHotfix <tag> [--package-manager <yarn|npm|pnpm>]` - Start a hotfix branch
-- `js-projekt release [--package-manager <yarn|npm|pnpm>]` - Execute release process
-- `js-projekt publish [--package-manager <yarn|npm|pnpm>]` - Publish package
+- `js-project version` - Display current version/branch
+- `js-project releaseVersion` - Create a new release version
+- `js-project verifyRelease [--package-manager <yarn|npm|pnpm>]` - Verify release readiness
+- `js-project startHotfix <tag> [--package-manager <yarn|npm|pnpm>]` - Start a hotfix branch
+- `js-project release [--package-manager <yarn|npm|pnpm>]` - Execute release process
+- `js-project publish [--package-manager <yarn|npm|pnpm>]` - Publish package
 
 All commands support `--verbose` (`-v`) flag for detailed error messages with stack traces.
 

@@ -8,7 +8,7 @@ This tool implements the [Sitepark Branching Model](https://sitepark.github.io/g
 
 ### System-wide Installation (Recommended)
 
-Install the package system-wide to make `js-projekt` available to all users in `/usr/local/bin`:
+Install the package system-wide to make `js-project` available to all users in `/usr/local/bin`:
 
 #### Installation
 
@@ -17,14 +17,14 @@ Install the package system-wide to make `js-projekt` available to all users in `
 sudo npm install -g @sitepark/js-project
 
 # Create symlink to /usr/local/bin
-sudo ln -s $(npm bin -g)/js-projekt /usr/local/bin/js-projekt
+sudo ln -s $(npm bin -g)/js-project /usr/local/bin/js-project
 ```
 
 #### Verify installation:
 
 ```bash
-which js-projekt      # Should show: /usr/local/bin/js-projekt
-js-projekt version    # Should output: main
+which js-project      # Should show: /usr/local/bin/js-project
+js-project version    # Should output: main
 ```
 
 ### User-level Installation
@@ -48,7 +48,7 @@ Note: With user-level installation, ensure npm/pnpm global bin is in your PATH.
 Displays the current branch name.
 
 ```bash
-js-projekt version
+js-project version
 ```
 
 **Output example**: `1.2.0-SNAPSHOT`
@@ -62,7 +62,7 @@ js-projekt version
 Calculates and displays the next release version based on the current SNAPSHOT version.
 
 ```bash
-js-projekt releaseVersion
+js-project releaseVersion
 ```
 
 **Example**:
@@ -81,7 +81,7 @@ Verifies that the project is ready for a release by checking:
 - Valid `publishConfig.registry` is configured in package.json
 
 ```bash
-js-projekt verifyRelease [--package-manager <yarn|npm|pnpm>]
+js-project verifyRelease [--package-manager <yarn|npm|pnpm>]
 ```
 
 **Exit codes**:
@@ -108,7 +108,7 @@ dependencies:
 Creates a hotfix branch from an existing release tag and prepares it for development.
 
 ```bash
-js-projekt startHotfix <tag> [--package-manager <yarn|npm|pnpm>]
+js-project startHotfix <tag> [--package-manager <yarn|npm|pnpm>]
 ```
 
 **Arguments**:
@@ -129,7 +129,7 @@ js-projekt startHotfix <tag> [--package-manager <yarn|npm|pnpm>]
 
 ```bash
 # Starting from release tag 2.1.3
-js-projekt startHotfix 2.1
+js-project startHotfix 2.1
 
 # Creates branch: hotfix/2.1.x
 # Sets version to: 2.1.4-SNAPSHOT
@@ -144,7 +144,7 @@ js-projekt startHotfix 2.1
 Executes the complete release process including building, testing, and version management.
 
 ```bash
-js-projekt release [--package-manager <yarn|npm|pnpm>]
+js-project release [--package-manager <yarn|npm|pnpm>]
 ```
 
 **Prerequisites**:
@@ -175,7 +175,7 @@ js-projekt release [--package-manager <yarn|npm|pnpm>]
 
 ```bash
 # Current state: version 1.5.0-SNAPSHOT on main branch
-js-projekt release
+js-project release
 
 # Creates:
 # - Tag: 1.5.0
@@ -186,7 +186,7 @@ js-projekt release
 
 ```bash
 # Current state: version 2.1.4-SNAPSHOT on hotfix/2.1.x branch
-js-projekt release
+js-project release
 
 # Creates:
 # - Tag: 2.1.4
@@ -202,7 +202,7 @@ js-projekt release
 Publishes the current package to npm registry with appropriate versioning and tagging.
 
 ```bash
-js-projekt publish [--package-manager <yarn|npm|pnpm>]
+js-project publish [--package-manager <yarn|npm|pnpm>]
 ```
 
 **What it does**:
@@ -241,13 +241,13 @@ js-projekt publish [--package-manager <yarn|npm|pnpm>]
 ```bash
 # 1. Ensure you're on main branch with a SNAPSHOT version
 git checkout main
-js-projekt version  # Output: main
+js-project version  # Output: main
 
 # 2. Verify release readiness
-js-projekt verifyRelease
+js-project verifyRelease
 
 # 3. Execute release
-js-projekt release
+js-project release
 
 # 4. Push commits and tags
 git push origin main --tags
@@ -258,7 +258,7 @@ git push origin main --tags
 ```bash
 # 1. Start hotfix from a previous release (e.g., 2.1.3)
 git checkout 2.1.3
-js-projekt startHotfix 2.1
+js-project startHotfix 2.1
 
 # 2. Make your changes on the hotfix/2.1.x branch
 git checkout hotfix/2.1.x
@@ -271,7 +271,7 @@ git cherry-pick <commit-hash>
 
 # 4. Release the hotfix
 git checkout hotfix/2.1.x
-js-projekt release
+js-project release
 
 # 5. Push changes and tags
 git push origin hotfix/2.1.x --tags
@@ -289,7 +289,7 @@ git checkout -b support/1.x
 
 # 3. Continue development on support/1.x
 # Releases work the same as on main branch
-js-projekt release
+js-project release
 ```
 
 ## Project Structure
