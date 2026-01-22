@@ -230,7 +230,7 @@ describe("ReleaseManagement", () => {
       expect(mockGit.commit).toHaveBeenCalledWith(
         "package.json",
         "ci(release)",
-        "updating package.json set version to 1.5.0",
+        "updating package.json set version to 1.6.0-SNAPSHOT",
       );
     });
 
