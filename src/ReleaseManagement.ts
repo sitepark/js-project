@@ -133,7 +133,7 @@ export class ReleaseManagement {
       "updating package.json set version to " + nextSnapshotVersion,
     );
 
-    this.git.push();
+    this.git.pushOrigin(this.project.getBranch());
 
     return releaseVersion;
   }
