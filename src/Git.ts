@@ -81,7 +81,7 @@ export class Git {
   }
 
   public pushOrigin(branchName: string): void {
-    execSync(`git push --set-upstream origin ${branchName}`, {
+    execSync(`git push -u origin ${branchName}`, {
       stdio: "inherit",
     });
   }
