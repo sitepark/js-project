@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/cli.js",
   "bin": {
-    "js-projekt": "./dist/cli.js"
+    "js-project": "./dist/cli.js"
   },
   "repository": {
     "type": "git",
