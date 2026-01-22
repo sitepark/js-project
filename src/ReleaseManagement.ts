@@ -132,6 +132,7 @@ export class ReleaseManagement {
       "package.json",
       "ci(release)",
       "updating package.json set version to " + nextSnapshotVersion,
+      false,
     );
 
     this.git.pushOrigin(this.project.getBranch());
