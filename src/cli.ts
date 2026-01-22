@@ -9,6 +9,8 @@ import { startHotfixCommand } from "./commands/startHotfix.js";
 import { verifyReleaseCommand } from "./commands/verifyRelease.js";
 import { versionCommand } from "./commands/version.js";
 
+declare const __VERSION__: string;
+
 function defaultPackageManager(): string {
   if (process.env.JS_PROJECT_PACKAGE_MANAGER === undefined) {
     throw new Error(
@@ -32,6 +34,8 @@ function handleError(error: unknown, verbose: boolean): void {
 }
 
 yargs(hideBin(process.argv))
+  .scriptName("js-project")
+  .version(__VERSION__)
   .option("verbose", {
     alias: "v",
     type: "boolean",

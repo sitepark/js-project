@@ -1,8 +1,14 @@
 import { defineConfig } from "vitest/config";
 import { resolve } from "path";
+import { readFileSync } from "fs";
 import dts from "vite-plugin-dts";
 
+const pkg = JSON.parse(readFileSync("./package.json", "utf8"));
+
 export default defineConfig({
+  define: {
+    __VERSION__: JSON.stringify(pkg.version),
+  },
   plugins: [dts()],
   build: {
     ssr: true,
