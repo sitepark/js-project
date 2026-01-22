@@ -31,7 +31,7 @@ export class BuildProvider {
       console.log(`Skipping optional Script "${scriptName}"`);
       return;
     }
-    execSync(`${this.packageManager} run ${scriptName}}`, {
+    execSync(`${this.packageManager} run ${scriptName}`, {
       stdio: "inherit",
     });
   }
