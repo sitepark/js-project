@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { DependencyInfo, Project } from "../src/Project.js";
 import { VerificationReport } from "../src/VerificationReport.js";
-import type { Project, DependencyInfo } from "../src/Project.js";
 
 describe("VerificationReport", () => {
   let mockProject: Project;
@@ -74,11 +74,11 @@ describe("VerificationReport", () => {
       expect(report.isPublishable()).toBe(true);
     });
 
-    it("should return false when publishConfig is missing", () => {
+    it("should return true when publishConfig is missing", () => {
       vi.mocked(mockProject.hasPublishConfig).mockReturnValue(false);
 
       const report = new VerificationReport(mockProject);
-      expect(report.isPublishable()).toBe(false);
+      expect(report.isPublishable()).toBe(true);
     });
   });
 
@@ -91,12 +91,12 @@ describe("VerificationReport", () => {
       expect(report.isReleaseable()).toBe(true);
     });
 
-    it("should return false when not publishable", () => {
+    it("should return true when publishable is always true and no SNAPSHOT dependencies", () => {
       vi.mocked(mockProject.hasPublishConfig).mockReturnValue(false);
       vi.mocked(mockProject.getSnapshotDependencies).mockReturnValue([]);
 
       const report = new VerificationReport(mockProject);
-      expect(report.isReleaseable()).toBe(false);
+      expect(report.isReleaseable()).toBe(true);
     });
 
     it("should return false when has SNAPSHOT dependencies", () => {
@@ -147,16 +147,14 @@ describe("VerificationReport", () => {
   });
 
   describe("toString", () => {
-    it("should return error message when not publishable", () => {
+    it("should return error message when something went wrong", () => {
       vi.mocked(mockProject.hasPublishConfig).mockReturnValue(false);
       vi.mocked(mockProject.getSnapshotDependencies).mockReturnValue([]);
 
       const report = new VerificationReport(mockProject);
       const message = report.toString();
 
-      expect(message).toBe(
-        'Project is missing a publishConfig. Please define a registry."',
-      );
+      expect(message).toBe("Something went wrong");
     });
 
     it("should return SNAPSHOT dependencies message when has snapshots", () => {
@@ -177,16 +175,6 @@ describe("VerificationReport", () => {
       expect(message).toContain("Snapshot-Version detected:");
       expect(message).toContain("dependencies:");
       expect(message).toContain("@sitepark/test - ^1.0.0-SNAPSHOT");
-    });
-
-    it("should return error message when something went wrong", () => {
-      vi.mocked(mockProject.hasPublishConfig).mockReturnValue(true);
-      vi.mocked(mockProject.getSnapshotDependencies).mockReturnValue([]);
-
-      const report = new VerificationReport(mockProject);
-      const message = report.toString();
-
-      expect(message).toBe("Something went wrong");
     });
   });
 

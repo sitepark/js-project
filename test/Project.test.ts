@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { Project } from "../src/Project.js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Git } from "../src/Git.js";
 import type { PackageJson } from "../src/PackageJson.js";
+import { Project } from "../src/Project.js";
 
 describe("Project", () => {
   let mockGit: Git;
@@ -222,16 +222,17 @@ describe("Project", () => {
 
   describe("getSnapshotRegistry", () => {
     it("should return snapshotRegistry when configured", () => {
-      packageJson.publishConfig = {
-        snapshotRegistry: "https://snapshot.registry.com",
-      };
+      process.env.JS_PROJECT_SNAPSHOT_REGISTRY =
+        "https://snapshot.registry.com";
       const project = new Project(packageJson, "/test/package.json", mockGit);
       expect(project.getSnapshotRegistry()).toBe(
         "https://snapshot.registry.com",
       );
+      delete process.env.JS_PROJECT_SNAPSHOT_REGISTRY;
     });
 
     it("should return undefined when not configured", () => {
+      delete process.env.JS_PROJECT_SNAPSHOT_REGISTRY;
       const project = new Project(packageJson, "/test/package.json", mockGit);
       expect(project.getSnapshotRegistry()).toBeUndefined();
     });
@@ -239,14 +240,14 @@ describe("Project", () => {
 
   describe("getReleaseRegistry", () => {
     it("should return releaseRegistry when configured", () => {
-      packageJson.publishConfig = {
-        releaseRegistry: "https://release.registry.com",
-      };
+      process.env.JS_PROJECT_RELEASE_REGISTRY = "https://release.registry.com";
       const project = new Project(packageJson, "/test/package.json", mockGit);
       expect(project.getReleaseRegistry()).toBe("https://release.registry.com");
+      delete process.env.JS_PROJECT_RELEASE_REGISTRY;
     });
 
     it("should return undefined when not configured", () => {
+      delete process.env.JS_PROJECT_RELEASE_REGISTRY;
       const project = new Project(packageJson, "/test/package.json", mockGit);
       expect(project.getReleaseRegistry()).toBeUndefined();
     });
