@@ -206,29 +206,78 @@ js-project publish [--package-manager <yarn|npm|pnpm>]
 **What it does**:
 
 1. Determines target registry:
-   - For releases: uses `publishConfig.releaseRegistry` or `publishConfig.registry`
-   - For SNAPSHOTs: uses `publishConfig.snapshotRegistry` or `publishConfig.registry`
+   - For releases: uses `JS_PROJECT_RELEASE_REGISTRY` environment variable (or default npm registry if not set)
+   - For SNAPSHOTs: uses `JS_PROJECT_SNAPSHOT_REGISTRY` environment variable (or default npm registry if not set)
 2. For SNAPSHOT versions: temporarily appends timestamp (e.g., `1.2.0-SNAPSHOT.20260119123045`)
 3. Compares with latest Git tag to determine npm dist-tag:
    - `latest`: For releases that are newer than the last tagged version
    - `next`: For SNAPSHOTs that are newer than the last tagged version
-   - No tag: For versions older than the last tagged version
-4. Publishes with: `<package-manager> publish --ignore-scripts --non-interactive [--registry <url>] [--tag <tag>]`
+   - `hotfix`: For releases from hotfix branches
+   - `release`: For releases that are older than the last tagged version
+   - `snapshot`: For SNAPSHOTs that are older than the last tagged version
+4. Publishes with: `<package-manager> publish --ignore-scripts --non-interactive [--registry <url>] --tag <tag>`
 5. Restores original version in package.json (for SNAPSHOT publishes)
 
-**Registry configuration in package.json**:
+**Use case**: Typically called as part of the `release` command, but can be used independently to publish without version changes.
 
-```json
-{
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org",
-    "snapshotRegistry": "https://my-snapshot-registry.com",
-    "releaseRegistry": "https://my-release-registry.com"
-  }
-}
+---
+
+## SNAPSHOT Versions
+
+SNAPSHOT versions are pre-release development versions used during active development before creating an official release.
+
+### Version Format
+
+- **Development version**: `1.2.0-SNAPSHOT` (in package.json)
+- **Published version**: `1.2.0-SNAPSHOT.20260119123045` (temporary timestamp appended during publish)
+
+### How SNAPSHOTs Work
+
+When you publish a SNAPSHOT version:
+
+1. **Timestamp Addition**: The current timestamp is temporarily appended to the version in ISO format with special characters removed
+   - Format: `YYYYMMDDHHMMSS`
+   - Example: `1.2.0-SNAPSHOT` becomes `1.2.0-SNAPSHOT.20260119123045`
+2. **npm Dist-Tag**: The package is published with an appropriate npm dist-tag:
+   - `next`: If the SNAPSHOT is newer than the last tagged release version
+   - `snapshot`: If the SNAPSHOT is older than the last tagged release version
+3. **Version Restoration**: After publishing, the original `X.Y.Z-SNAPSHOT` version is restored in package.json
+
+### Registry Configuration
+
+You can configure separate registries for SNAPSHOT and release versions using environment variables:
+
+```bash
+# Optional: Registry for SNAPSHOT versions
+export JS_PROJECT_SNAPSHOT_REGISTRY=https://my-snapshot-registry.com
+
+# Optional: Registry for release versions
+export JS_PROJECT_RELEASE_REGISTRY=https://my-release-registry.com
 ```
 
-**Use case**: Typically called as part of the `release` command, but can be used independently to publish without version changes.
+- **JS_PROJECT_SNAPSHOT_REGISTRY**: Used when publishing SNAPSHOT versions (if not set, uses default npm registry)
+- **JS_PROJECT_RELEASE_REGISTRY**: Used when publishing release versions (if not set, uses default npm registry)
+
+**Note**: The `publishConfig.registry` field in package.json is still validated by `verifyRelease` to ensure publishing is properly configured, but the actual registry URL used during publish comes from these environment variables.
+
+### Installing SNAPSHOT Versions
+
+```bash
+# Install the latest SNAPSHOT from the 'next' tag
+npm install @sitepark/js-project@next
+
+# Install a specific SNAPSHOT version with timestamp
+npm install @sitepark/js-project@1.2.0-SNAPSHOT.20260119123045
+```
+
+### Use Cases
+
+- **Continuous Integration**: Automatically publish SNAPSHOTs from main branch on every commit
+- **Testing**: Allow teams to test upcoming features before official release
+- **Preview Releases**: Share work-in-progress versions with stakeholders
+- **Dependency Development**: Use SNAPSHOT versions of dependencies during active development
+
+**Important**: SNAPSHOT dependencies should be converted to release versions before creating a production release (verified by `verifyRelease` command).
 
 ---
 
