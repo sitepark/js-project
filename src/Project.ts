@@ -20,6 +20,15 @@ export interface DependencyInfo {
   versionRange: string;
 }
 
+export function defaultPackageManager(): string {
+  if (process.env.JS_PROJECT_PACKAGE_MANAGER === undefined) {
+    throw new Error(
+      "JS_PROJECT_PACKAGE_MANAGER environment variable is not set",
+    );
+  }
+  return process.env.JS_PROJECT_PACKAGE_MANAGER;
+}
+
 export class Project {
   private git: Git;
 

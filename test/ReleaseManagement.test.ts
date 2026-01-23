@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { BuildProvider } from "../src/BuildProvider.js";
 import type { Git } from "../src/Git.js";
+import type { NodePublisherProvider } from "../src/NodePublisherProvider.js";
 import type { Project } from "../src/Project.js";
-import type { PublisherProvider } from "../src/PublisherProvider.js";
 import { ReleaseManagement } from "../src/ReleaseManagement.js";
 
 describe("ReleaseManagement", () => {
   let mockProject: Project;
   let mockGit: Git;
   let mockBuildProvider: BuildProvider;
-  let mockPublisherProvider: PublisherProvider;
+  let mockPublisherProvider: NodePublisherProvider;
   let releaseManagement: ReleaseManagement;
 
   beforeEach(() => {
@@ -46,7 +46,7 @@ describe("ReleaseManagement", () => {
 
     mockPublisherProvider = {
       publish: vi.fn(),
-    } as unknown as PublisherProvider;
+    } as unknown as NodePublisherProvider;
 
     releaseManagement = new ReleaseManagement(
       mockProject,

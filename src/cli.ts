@@ -8,17 +8,9 @@ import { releaseVersionCommand } from "./commands/releaseVersion.js";
 import { startHotfixCommand } from "./commands/startHotfix.js";
 import { verifyReleaseCommand } from "./commands/verifyRelease.js";
 import { versionCommand } from "./commands/version.js";
+import { defaultPackageManager } from "./Project.js";
 
 declare const __VERSION__: string;
-
-function defaultPackageManager(): string {
-  if (process.env.JS_PROJECT_PACKAGE_MANAGER === undefined) {
-    throw new Error(
-      "JS_PROJECT_PACKAGE_MANAGER environment variable is not set",
-    );
-  }
-  return process.env.JS_PROJECT_PACKAGE_MANAGER;
-}
 
 function handleError(error: unknown, verbose: boolean): void {
   if (error instanceof Error) {
@@ -144,9 +136,9 @@ yargs(hideBin(process.argv))
         demandOption: false,
       });
     },
-    (argv) => {
+    async (argv) => {
       try {
-        publishCommand(argv.packageManager ?? defaultPackageManager());
+        await publishCommand(argv.packageManager ?? defaultPackageManager());
       } catch (error) {
         handleError(error, argv.verbose);
       }

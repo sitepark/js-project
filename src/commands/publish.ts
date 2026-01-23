@@ -1,10 +1,10 @@
 import { Git } from "../Git.js";
+import { NodePublisherProvider } from "../NodePublisherProvider.js";
 import { Project } from "../Project.js";
-import { PublisherProvider } from "../PublisherProvider.js";
 
-export function publishCommand(packageManager: string): void {
+export async function publishCommand(packageManager: string): Promise<void> {
   const git = new Git();
   const project = Project.forCwd(git);
-  const publisherProvider = new PublisherProvider(project, packageManager);
-  publisherProvider.publish();
+  const publisherProvider = new NodePublisherProvider(project, packageManager);
+  await publisherProvider.publish();
 }

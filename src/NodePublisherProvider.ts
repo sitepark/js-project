@@ -2,7 +2,11 @@ import { execSync } from "node:child_process";
 import type { Project } from "./Project.js";
 import { greaterThanEqualsVersion } from "./version.js";
 
-export class PublisherProvider {
+export interface PublisherProvider {
+  publish(): Promise<void>;
+}
+
+export class NodePublisherProvider implements PublisherProvider {
   private project: Project;
   private packageManager: string;
 
@@ -11,7 +15,7 @@ export class PublisherProvider {
     this.packageManager = packageManager;
   }
 
-  public publish(): void {
+  public async publish(): Promise<void> {
     const registry = this.project.isRelease()
       ? this.project.getReleaseRegistry()
       : this.project.getSnapshotRegistry();
@@ -66,6 +70,7 @@ export class PublisherProvider {
         this.project.updateVersion(version);
       }
     }
+    return;
   }
 
   private getPublishTag(version: string, lastReleaseVersion: string): string {

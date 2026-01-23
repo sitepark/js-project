@@ -1,7 +1,7 @@
 import type { BuildProvider } from "./BuildProvider.js";
 import type { Git } from "./Git.js";
+import type { PublisherProvider } from "./NodePublisherProvider.js";
 import type { Project } from "./Project.js";
-import type { PublisherProvider } from "./PublisherProvider.js";
 import { VerificationReport } from "./VerificationReport.js";
 import { incrementPatchVersion } from "./version.js";
 
@@ -70,14 +70,14 @@ export class ReleaseManagement {
     this.git.commit(
       "package.json",
       "ci(release)",
-      "updating package.json set version to " + hotfixSnapshotVersion,
+      "Updating package.json set version to " + hotfixSnapshotVersion,
     );
     this.git.pushOrigin(hotfixBranch);
 
     return hotfixSnapshotVersion;
   }
 
-  public release(): string {
+  public async release(): Promise<string> {
     if (!this.project.isSnapshot()) {
       throw new Error(
         "The current version is not a SNAPSHOT version: " +
@@ -124,7 +124,7 @@ export class ReleaseManagement {
     this.git.createTag(releaseVersion, "Release Version " + releaseVersion);
     this.git.pushOrigin(this.project.getBranch());
 
-    this.publisherProvider.publish();
+    await this.publisherProvider.publish();
 
     const nextSnapshotVersion = this.project.getNextSnapshotVersion();
     this.project.updateVersion(nextSnapshotVersion);
@@ -132,7 +132,7 @@ export class ReleaseManagement {
     this.git.commit(
       "package.json",
       "ci(release)",
-      "updating package.json set version to " + nextSnapshotVersion,
+      "Updating package.json set version to " + nextSnapshotVersion,
       false,
     );
 
