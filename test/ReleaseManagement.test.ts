@@ -141,7 +141,7 @@ describe("ReleaseManagement", () => {
       expect(mockGit.commit).toHaveBeenCalledWith(
         "package.json",
         "ci(release)",
-        "updating package.json set version to 2.1.1-SNAPSHOT",
+        "Updating package.json set version to 2.1.1-SNAPSHOT",
       );
     });
   });
@@ -160,42 +160,42 @@ describe("ReleaseManagement", () => {
       vi.spyOn(console, "groupEnd").mockImplementation(() => {});
     });
 
-    it("should throw error when not a SNAPSHOT version", () => {
+    it("should throw error when not a SNAPSHOT version", async () => {
       vi.mocked(mockProject.isSnapshot).mockReturnValue(false);
       vi.mocked(mockProject.getVersion).mockReturnValue("1.0.0");
 
-      expect(() => releaseManagement.release()).toThrow(
+      await expect(releaseManagement.release()).rejects.toThrow(
         "The current version is not a SNAPSHOT version: 1.0.0",
       );
     });
 
-    it("should throw error when not on main, support or hotfix branch", () => {
+    it("should throw error when not on main, support or hotfix branch", async () => {
       vi.mocked(mockProject.isMainBranch).mockReturnValue(false);
       vi.mocked(mockProject.isSupportBranch).mockReturnValue(false);
       vi.mocked(mockProject.isHotfixBranch).mockReturnValue(false);
       vi.mocked(mockProject.getBranch).mockReturnValue("feature/test");
 
-      expect(() => releaseManagement.release()).toThrow(
+      await expect(releaseManagement.release()).rejects.toThrow(
         "No release can be created with branch 'feature/test'.",
       );
     });
 
-    it("should throw error when release version is null", () => {
+    it("should throw error when release version is null", async () => {
       vi.mocked(mockProject.getNextReleaseVersion).mockReturnValue(null as any);
 
-      expect(() => releaseManagement.release()).toThrow(
+      await expect(releaseManagement.release()).rejects.toThrow(
         "Unable to determine release version",
       );
     });
 
-    it("should throw error when uncommitted changes exist", () => {
+    it("should throw error when uncommitted changes exist", async () => {
       vi.mocked(mockProject.hasUncommittedChanges).mockReturnValue(true);
       vi.mocked(mockGit.getChangedTrackedFiles).mockReturnValue([
         "M file1.ts",
         "M file2.ts",
       ]);
 
-      expect(() => releaseManagement.release()).toThrow(
+      await expect(releaseManagement.release()).rejects.toThrow(
         "The release can only be created when all changes are committed.\n" +
           "Uncommitted changes:\n" +
           "M file1.ts\n" +
@@ -203,20 +203,20 @@ describe("ReleaseManagement", () => {
       );
     });
 
-    it("should update version to release version", () => {
-      releaseManagement.release();
+    it("should update version to release version", async () => {
+      await releaseManagement.release();
 
       expect(mockProject.updateVersion).toHaveBeenCalledWith("1.5.0");
     });
 
-    it("should format package.json", () => {
-      releaseManagement.release();
+    it("should format package.json", async () => {
+      await releaseManagement.release();
 
       expect(mockBuildProvider.formatPackageJson).toHaveBeenCalled();
     });
 
-    it("should execute build pipeline", () => {
-      releaseManagement.release();
+    it("should execute build pipeline", async () => {
+      await releaseManagement.release();
 
       expect(mockBuildProvider.test).toHaveBeenCalled();
       expect(mockBuildProvider.verify).toHaveBeenCalled();
@@ -224,8 +224,8 @@ describe("ReleaseManagement", () => {
       expect(mockPublisherProvider.publish).toHaveBeenCalled();
     });
 
-    it("should create release commit", () => {
-      releaseManagement.release();
+    it("should create release commit", async () => {
+      await releaseManagement.release();
 
       expect(mockGit.commit).toHaveBeenCalledWith(
         "package.json",
@@ -235,8 +235,8 @@ describe("ReleaseManagement", () => {
       );
     });
 
-    it("should create git tag", () => {
-      releaseManagement.release();
+    it("should create git tag", async () => {
+      await releaseManagement.release();
 
       expect(mockGit.createTag).toHaveBeenCalledWith(
         "1.5.0",
@@ -244,14 +244,14 @@ describe("ReleaseManagement", () => {
       );
     });
 
-    it("should update version to next snapshot", () => {
-      releaseManagement.release();
+    it("should update version to next snapshot", async () => {
+      await releaseManagement.release();
 
       expect(mockProject.updateVersion).toHaveBeenCalledWith("1.6.0-SNAPSHOT");
     });
 
-    it("should create snapshot commit", () => {
-      releaseManagement.release();
+    it("should create snapshot commit", async () => {
+      await releaseManagement.release();
 
       expect(mockGit.commit).toHaveBeenCalledWith(
         "package.json",
@@ -261,26 +261,26 @@ describe("ReleaseManagement", () => {
       );
     });
 
-    it("should return release version", () => {
-      const result = releaseManagement.release();
+    it("should return release version", async () => {
+      const result = await releaseManagement.release();
 
       expect(result).toBe("1.5.0");
     });
 
-    it("should work with support branch", () => {
+    it("should work with support branch", async () => {
       vi.mocked(mockProject.isMainBranch).mockReturnValue(false);
       vi.mocked(mockProject.isSupportBranch).mockReturnValue(true);
 
-      const result = releaseManagement.release();
+      const result = await releaseManagement.release();
 
       expect(result).toBe("1.5.0");
     });
 
-    it("should work with hotfix branch", () => {
+    it("should work with hotfix branch", async () => {
       vi.mocked(mockProject.isMainBranch).mockReturnValue(false);
       vi.mocked(mockProject.isHotfixBranch).mockReturnValue(true);
 
-      const result = releaseManagement.release();
+      const result = await releaseManagement.release();
 
       expect(result).toBe("1.5.0");
     });
