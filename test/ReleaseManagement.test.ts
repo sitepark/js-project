@@ -41,7 +41,7 @@ describe("ReleaseManagement", () => {
       formatPackageJson: vi.fn(),
       test: vi.fn(),
       verify: vi.fn(),
-      package: vi.fn(),
+      build: vi.fn(),
     } as unknown as BuildProvider;
 
     mockPublisherProvider = {
@@ -230,7 +230,8 @@ describe("ReleaseManagement", () => {
       expect(mockGit.commit).toHaveBeenCalledWith(
         "package.json",
         "ci(release)",
-        "updating package.json set version to 1.6.0-SNAPSHOT",
+        "Release 1.5.0",
+        false,
       );
     });
 
@@ -255,7 +256,8 @@ describe("ReleaseManagement", () => {
       expect(mockGit.commit).toHaveBeenCalledWith(
         "package.json",
         "ci(release)",
-        "updating package.json set version to 1.6.0-SNAPSHOT",
+        "Release 1.5.0",
+        false,
       );
     });
 
