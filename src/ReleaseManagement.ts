@@ -122,6 +122,7 @@ export class ReleaseManagement {
     );
 
     this.git.createTag(releaseVersion, "Release Version " + releaseVersion);
+    this.git.pushOrigin(this.project.getBranch());
 
     this.publisherProvider.publish();
 
