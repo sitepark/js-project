@@ -51,6 +51,11 @@ export class Project {
     this.branch = this.git.getCurrentBranch();
   }
 
+  public refresh(): void {
+    const pkgData = JSON.parse(readFileSync(this.packagePath, "utf8"));
+    this.pkg = pkgData;
+  }
+
   public getName(): string {
     return this.pkg.name || "unnamed-package";
   }
