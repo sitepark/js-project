@@ -14,7 +14,7 @@ Install the package system-wide to make `js-project` available to all users in `
 
 ```bash
 # Install globally with npm
-sudo npm install -g @sitepark/js-project
+sudo pnpm install -g @sitepark/js-project
 
 # Create symlink to /usr/local/bin
 sudo ln -s $(npm bin -g)/js-project /usr/local/bin/js-project
@@ -24,20 +24,18 @@ sudo ln -s $(npm bin -g)/js-project /usr/local/bin/js-project
 
 ```bash
 which js-project      # Should show: /usr/local/bin/js-project
-js-project version    # Should output: main
+js-project --version  # Should output: version of js-project
 ```
 
 ### User-level Installation
 
 Install for your user only (no system-wide access):
 
-```bash
-# Using npm
-npm install -g @sitepark/js-project
-
 # Using pnpm
+
 pnpm add -g @sitepark/js-project
-```
+
+````
 
 Note: With user-level installation, ensure npm/pnpm global bin is in your PATH.
 
@@ -49,7 +47,7 @@ Displays the current branch name.
 
 ```bash
 js-project version
-```
+````
 
 **Output example**: `1.2.0-SNAPSHOT`
 
