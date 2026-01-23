@@ -220,7 +220,7 @@ describe("ReleaseManagement", () => {
 
       expect(mockBuildProvider.test).toHaveBeenCalled();
       expect(mockBuildProvider.verify).toHaveBeenCalled();
-      expect(mockBuildProvider.package).toHaveBeenCalled();
+      expect(mockBuildProvider.build).toHaveBeenCalled();
       expect(mockPublisherProvider.publish).toHaveBeenCalled();
     });
 

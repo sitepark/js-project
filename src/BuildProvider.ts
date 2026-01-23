@@ -22,8 +22,8 @@ export class BuildProvider {
     this.runScript("test", false);
   }
 
-  public package(): void {
-    this.runScript("package");
+  public build(): void {
+    this.runScript("build", false);
   }
 
   private runScript(scriptName: string, optional = true): void {

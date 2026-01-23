@@ -162,7 +162,7 @@ js-project release [--package-manager <yarn|npm|pnpm>]
 4. Runs build pipeline:
    - `pnpm test` (if script exists)
    - `pnpm verify` (if script exists)
-   - `pnpm package` (if script exists)
+   - `pnpm build` (if script exists)
    - Publishes to npm registry
 5. Commits release version: `ci(release): updating package.json set version to X.Y.Z`
 6. Creates Git tag: `X.Y.Z` with message "Release Version X.Y.Z"

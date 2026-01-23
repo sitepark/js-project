@@ -3,7 +3,18 @@
   "version": "1.24.0-SNAPSHOT",
   "description": "CLI tool for GitLab pipeline release processes",
   "type": "module",
-  "main": "dist/cli.js",
+  "main": "dist/index.js",
+  "types": "dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./cli": {
+      "types": "./dist/src/cli.d.ts",
+      "import": "./dist/cli.js"
+    }
+  },
   "bin": {
     "js-project": "./dist/cli.js"
   },
@@ -48,12 +59,13 @@
   },
   "scripts": {
     "prepare": "husky",
-    "package": "vite build && chmod +x dist/cli.js",
-    "format": "prettier --write ./",
-    "test": "vitest run",
+    "build": "vite build && chmod +x dist/cli.js",
+    "format": "pnpm prettier --write ./",
+    "format:package-json": "echo 'format package.json'",
+    "test": "vitest run --coverage",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage",
-    "verify": "pnpm package; pnpm test:coverage"
+    "verify": "pnpm verify:format",
+    "verify:format": "prettier --check \"**/*.{js,json,md}\""
   }
 }

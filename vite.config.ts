@@ -13,9 +13,11 @@ export default defineConfig({
   build: {
     ssr: true,
     lib: {
-      entry: resolve(__dirname, "src/cli.ts"),
+      entry: {
+        index: resolve(__dirname, "src/index.ts"),
+        cli: resolve(__dirname, "src/cli.ts"),
+      },
       name: "js-project",
-      fileName: "cli",
       formats: ["es"],
     },
     rollupOptions: {

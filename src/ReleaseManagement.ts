@@ -111,7 +111,7 @@ export class ReleaseManagement {
     this.logTask(`Building package`, () => {
       this.buildProvider.test();
       this.buildProvider.verify();
-      this.buildProvider.package();
+      this.buildProvider.build();
     });
 
     this.git.commit(

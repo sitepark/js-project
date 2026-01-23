@@ -15,7 +15,7 @@ This is a TypeScript-based CLI tool (`js-project`) for managing GitLab pipeline 
 pnpm install
 
 # Build the project (compiles TypeScript and sets executable permissions)
-pnpm package
+pnpm build
 
 # Run tests
 pnpm test              # Run all tests once
@@ -46,7 +46,7 @@ js-project <command>
 ### Publishing
 
 ```bash
-# The prepublishOnly hook automatically runs package before publishing
+# The prepublishOnly hook automatically runs build before publishing
 npm publish
 ```
 
@@ -77,7 +77,7 @@ The architecture follows a clean separation of concerns with provider pattern fo
 
 **Provider Interfaces:**
 
-- `BuildProvider` - Executes build scripts (test, verify, package, format)
+- `BuildProvider` - Executes build scripts (test, verify, build, format)
 - `PublisherProvider` - Handles publishing to npm registries (supports SNAPSHOT versions with timestamps, tag management)
 
 **Supporting Classes:**
@@ -124,7 +124,7 @@ Hotfix workflow:
 1. Validate current state (must be SNAPSHOT on allowed branch)
 2. Convert version to release version
 3. Format package.json
-4. Run build pipeline: test → verify → package → publish
+4. Run build pipeline: test → verify → build → publish
 5. Commit release version and create Git tag
 6. Update to next SNAPSHOT version
 7. Commit SNAPSHOT version

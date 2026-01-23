@@ -29,7 +29,7 @@ export class Project {
 
   private branch: string;
 
-  public static forCwd(git: Git): Project {
+  public static forCwd(git: Git = new Git()): Project {
     const pkgPath = path.join(process.cwd(), "/package.json");
     const pkgData = JSON.parse(readFileSync(pkgPath, "utf8"));
     return new Project(pkgData, pkgPath, git);
@@ -40,6 +40,18 @@ export class Project {
     this.packagePath = packagePath;
     this.git = git;
     this.branch = this.git.getCurrentBranch();
+  }
+
+  public getName(): string {
+    return this.pkg.name || "unnamed-package";
+  }
+
+  public getPackageJson(): PackageJson {
+    return this.pkg;
+  }
+
+  public getPackagePath(): string {
+    return this.packagePath;
   }
 
   public getVersion(): string {
