@@ -31,9 +31,9 @@ js-project --version  # Should output: version of js-project
 
 Install for your user only (no system-wide access):
 
-# Using pnpm
-
+```bash
 pnpm add -g @sitepark/js-project
+```
 
 Note: With user-level installation, ensure npm/pnpm global bin is in your PATH.
 
