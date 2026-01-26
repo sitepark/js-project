@@ -291,11 +291,9 @@ js-project version  # Output: main
 # 2. Verify release readiness
 js-project verifyRelease
 
-# 3. Execute release
+# 3. Execute release and push commits and tags
 js-project release
 
-# 4. Push commits and tags
-git push origin main --tags
 ```
 
 ### Creating a Hotfix
@@ -314,12 +312,10 @@ git commit -m "fix: critical bug"
 git checkout main
 git cherry-pick <commit-hash>
 
-# 4. Release the hotfix
+# 4. Release the hotfix and push changes and tags
 git checkout hotfix/2.1.x
 js-project release
 
-# 5. Push changes and tags
-git push origin hotfix/2.1.x --tags
 ```
 
 ### Creating a Support Branch
