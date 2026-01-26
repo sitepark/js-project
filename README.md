@@ -35,8 +35,6 @@ Install for your user only (no system-wide access):
 
 pnpm add -g @sitepark/js-project
 
-````
-
 Note: With user-level installation, ensure npm/pnpm global bin is in your PATH.
 
 ## Available Commands
@@ -47,7 +45,7 @@ Displays the current branch name.
 
 ```bash
 js-project version
-````
+```
 
 **Output example**: `1.2.0-SNAPSHOT`
 
