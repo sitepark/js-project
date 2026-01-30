@@ -15,7 +15,7 @@ export class BuildProvider {
   }
 
   public verify(): void {
-    this.runScript("verify", false);
+    this.runScript("verify");
   }
 
   public test(): void {
