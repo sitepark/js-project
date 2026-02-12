@@ -32,20 +32,14 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
+    reporters: ["junit", "default"],
+    outputFile: "./build/junit-report.xml",
     include: ["test/**/*.test.ts"],
     coverage: {
+      reportsDirectory: "./build/coverage",
+      reporter: [["cobertura", { file: "cobertura-coverage.xml" }], "text"],
       provider: "v8",
-      reporter: ["text", "json", "html"],
       include: ["src/**/*.ts"],
-      exclude: [
-        "node_modules/",
-        "dist/",
-        "test/",
-        "**/*.test.ts",
-        "**/*.spec.ts",
-        "vite.config.ts",
-        "src/cli.ts",
-      ],
     },
   },
 });
