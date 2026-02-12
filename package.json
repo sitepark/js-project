@@ -4,14 +4,14 @@
   "description": "CLI tool for GitLab pipeline release processes",
   "type": "module",
   "main": "dist/index.js",
-  "types": "dist/src/index.d.ts",
+  "types": "dist/types/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/src/index.d.ts",
+      "types": "./dist/types/index.d.ts",
       "import": "./dist/index.js"
     },
     "./cli": {
-      "types": "./dist/src/cli.d.ts",
+      "types": "./dist/types/cli.d.ts",
       "import": "./dist/cli.js"
     }
   },

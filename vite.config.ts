@@ -9,7 +9,12 @@ export default defineConfig({
   define: {
     __VERSION__: JSON.stringify(pkg.version),
   },
-  plugins: [dts()],
+  plugins: [
+    dts({
+      outDir: "dist/types",
+      include: ["src/**/*"],
+    }),
+  ],
   build: {
     ssr: true,
     lib: {
