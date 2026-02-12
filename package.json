@@ -38,13 +38,13 @@
   "author": "Holger Veltrup <veltrup@sitepark.com> (http://www.sitepark.com)",
   "license": "MIT",
   "dependencies": {
-    "@types/yargs": "^17.0.35",
-    "@types/yargs-parser": "^21.0.3",
     "semver": "^7.7.4",
     "type-fest": "^5.4.4",
     "yargs": "^18.0.0"
   },
   "devDependencies": {
+    "@types/yargs": "^17.0.35",
+    "@types/yargs-parser": "^21.0.3",
     "@types/node": "^25.2.3",
     "@types/semver": "^7.7.1",
     "@vitest/coverage-v8": "^4.0.18",

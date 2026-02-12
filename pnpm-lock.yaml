@@ -8,12 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@types/yargs':
-        specifier: ^17.0.35
-        version: 17.0.35
-      '@types/yargs-parser':
-        specifier: ^21.0.3
-        version: 21.0.3
       semver:
         specifier: ^7.7.4
         version: 7.7.4
@@ -30,6 +24,12 @@ importers:
       '@types/semver':
         specifier: ^7.7.1
         version: 7.7.1
+      '@types/yargs':
+        specifier: ^17.0.35
+        version: 17.0.35
+      '@types/yargs-parser':
+        specifier: ^21.0.3
+        version: 21.0.3
       '@vitest/coverage-v8':
         specifier: ^4.0.18
         version: 4.0.18(vitest@4.0.18)
