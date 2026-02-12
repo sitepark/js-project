@@ -9,6 +9,7 @@ import { startHotfixCommand } from "./commands/startHotfix.js";
 import { verifyReleaseCommand } from "./commands/verifyRelease.js";
 import { versionCommand } from "./commands/version.js";
 import { defaultPackageManager } from "./Project.js";
+import { cleanCommand } from "./commands/clean.js";
 
 declare const __VERSION__: string;
 
@@ -139,6 +140,18 @@ yargs(hideBin(process.argv))
     async (argv) => {
       try {
         await publishCommand(argv.packageManager ?? defaultPackageManager());
+      } catch (error) {
+        handleError(error, argv.verbose);
+      }
+    },
+  )
+  .command(
+    "clean",
+    "Clean build directory",
+    () => {},
+    async (argv) => {
+      try {
+        await cleanCommand();
       } catch (error) {
         handleError(error, argv.verbose);
       }
