@@ -68,6 +68,14 @@ export class Project {
     return this.packagePath;
   }
 
+  public getBasePath(): string {
+    return path.dirname(this.packagePath);
+  }
+
+  public getBuildPath(): string {
+    return path.join(this.getBasePath(), "build");
+  }
+
   public getVersion(): string {
     return this.pkg.version || "1.0.0-SNAPSHOT";
   }

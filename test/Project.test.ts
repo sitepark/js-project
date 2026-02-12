@@ -252,4 +252,18 @@ describe("Project", () => {
       expect(project.getReleaseRegistry()).toBeUndefined();
     });
   });
+
+  describe("getBasePath", () => {
+    it("should return the base path for the project", () => {
+      const project = new Project(packageJson, "/test/package.json", mockGit);
+      expect(project.getBasePath()).toBe("/test");
+    });
+  });
+
+  describe("getBuildPath", () => {
+    it("should return the build path for the project", () => {
+      const project = new Project(packageJson, "/test/package.json", mockGit);
+      expect(project.getBuildPath()).toBe("/test/build");
+    });
+  });
 });
