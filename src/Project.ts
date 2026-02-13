@@ -94,15 +94,6 @@ export class Project {
     return this.branch;
   }
 
-  public getEscapedBranch(): string {
-    // Replace non-alphanumeric characters with "-"
-    const nonAlphaNumRegex = /[^a-zA-Z0-9äöüÄÖÜß]+/;
-    const outputString = this.getBranch().replaceAll(nonAlphaNumRegex, "-");
-
-    // Remove leading and trailing "-" characters
-    return outputString.replaceAll(/^-+|-+$/, "").trim();
-  }
-
   public getSnapshotRegistry(): string | undefined {
     return process.env.JS_PROJECT_SNAPSHOT_REGISTRY;
   }
