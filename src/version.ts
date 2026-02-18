@@ -65,3 +65,23 @@ export function incrementPatchVersion(version: string): string {
     ((semVersion?.patch ?? 0) + 1)
   );
 }
+
+const invalidChars = /[^a-zA-Z0-9äöüÄÖÜß]+/g;
+export function escapeVersionIdentifierForMaven(identifier: string): string {
+  const leadingUnderscore = /(^_+)/g;
+  const trailingUnderscore = /(_+$)/g;
+  return identifier
+    .replace(invalidChars, "_")
+    .replace(leadingUnderscore, "")
+    .replace(trailingUnderscore, "")
+    .trim();
+}
+export function escapeVersionIdentifierForNpm(identifier: string): string {
+  const leadingDash = /(^-+)/g;
+  const trailingDash = /(-+$)/g;
+  return identifier
+    .replace(invalidChars, "-")
+    .replace(leadingDash, "")
+    .replace(trailingDash, "")
+    .trim();
+}

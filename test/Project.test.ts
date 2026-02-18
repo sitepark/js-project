@@ -3,6 +3,11 @@ import type { Git } from "../src/Git.js";
 import type { PackageJson } from "../src/PackageJson.js";
 import { Project } from "../src/Project.js";
 
+const delay = (time: number) =>
+  new Promise((resolve) => {
+    setTimeout(resolve, time);
+  });
+
 describe("Project", () => {
   let mockGit: Git;
   let packageJson: PackageJson;
@@ -264,6 +269,37 @@ describe("Project", () => {
     it("should return the build path for the project", () => {
       const project = new Project(packageJson, "/test/package.json", mockGit);
       expect(project.getBuildPath()).toBe("/test/build");
+    });
+  });
+
+  describe("getBuildTime", () => {
+    it("should return the same build time every call", async () => {
+      const project = new Project(packageJson, "/test/package.json", mockGit);
+      const buildTime = project.getBuildTime();
+      await delay(100);
+      expect(project.getBuildTime()).toBe(buildTime);
+    });
+  });
+
+  describe("getFeatureBranchVersionIdentifier", () => {
+    it("should return null on non feature branches", () => {
+      vi.mocked(mockGit.getCurrentBranch).mockReturnValue("main");
+      const project = new Project(packageJson, "/test/package.json", mockGit);
+      expect(project.getFeatureBranchVersionIdentifier("npm")).toBe(null);
+      expect(project.getFeatureBranchVersionIdentifier("maven")).toBe(null);
+    });
+
+    it("should return the version identifier escaped", () => {
+      vi.mocked(mockGit.getCurrentBranch).mockReturnValue(
+        "feature/mein-tolles-feature-öüüöü-#123123###",
+      );
+      const project = new Project(packageJson, "/test/package.json", mockGit);
+      expect(project.getFeatureBranchVersionIdentifier("npm")).toBe(
+        "mein-tolles-feature-öüüöü-123123",
+      );
+      expect(project.getFeatureBranchVersionIdentifier("maven")).toBe(
+        "mein_tolles_feature_öüüöü_123123",
+      );
     });
   });
 });

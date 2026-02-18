@@ -3,6 +3,8 @@ import path from "path";
 import { Git } from "./Git.js";
 import type { PackageJson } from "./PackageJson.js";
 import {
+  escapeVersionIdentifierForMaven,
+  escapeVersionIdentifierForNpm,
   incrementMinorVersion,
   incrementPatchVersion,
   isSnapshot,
@@ -38,6 +40,8 @@ export class Project {
 
   private branch: string;
 
+  private buildTime: Date;
+
   public static forCwd(git: Git = new Git()): Project {
     const pkgPath = path.join(process.cwd(), "/package.json");
     const pkgData = JSON.parse(readFileSync(pkgPath, "utf8"));
@@ -49,6 +53,7 @@ export class Project {
     this.packagePath = packagePath;
     this.git = git;
     this.branch = this.git.getCurrentBranch();
+    this.buildTime = new Date();
   }
 
   public refresh(): void {
@@ -82,6 +87,24 @@ export class Project {
 
   public getVersions(): string[] {
     return this.git.getVersions();
+  }
+
+  public getBuildTime(): Date {
+    return this.buildTime;
+  }
+
+  public getFeatureBranchVersionIdentifier(
+    target: "npm" | "maven",
+  ): string | null {
+    const matches = this.getBranch().match(/^feature\/(.*)/);
+    if (!Array.isArray(matches) || matches.length < 2) {
+      return null;
+    }
+    const rawVersionIdentifier = matches[1] as string;
+    if (target === "maven") {
+      return escapeVersionIdentifierForMaven(rawVersionIdentifier);
+    }
+    return escapeVersionIdentifierForNpm(rawVersionIdentifier);
   }
 
   public updateVersion(newVersion: string): void {

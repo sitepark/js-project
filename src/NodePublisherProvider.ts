@@ -15,6 +15,30 @@ export class NodePublisherProvider implements PublisherProvider {
     this.packageManager = packageManager;
   }
 
+  public getNpmPublishVersion(): string {
+    let versionString = this.project.getVersion();
+    if (!this.project.isSnapshot()) {
+      return versionString;
+    }
+    // Buildzeitpunkt anhängen
+    // 1.1.0-SNAPSHOT.12839182389123
+    const buildDate = this.project
+      .getBuildTime()
+      .toISOString()
+      .replace(/[-:.ZT]/g, "");
+    versionString = `${versionString}.${buildDate}`;
+
+    const isOnFeatureBranch = this.project.getBranch().startsWith("feature/");
+    if (isOnFeatureBranch) {
+      // Feature-Branch-Name angängen
+      // 1.1.0-SNAPSHOT.12839182389123.mein_tolles_krasses_feature_123123
+      versionString = `${versionString}.${this.project.getFeatureBranchVersionIdentifier(
+        "npm",
+      )}`;
+    }
+    return versionString;
+  }
+
   public async publish(): Promise<void> {
     const registry = this.project.isRelease()
       ? this.project.getReleaseRegistry()
@@ -23,10 +47,9 @@ export class NodePublisherProvider implements PublisherProvider {
     const version = this.project.getVersion();
 
     if (this.project.isSnapshot()) {
-      const buildDate = new Date().toISOString().replace(/[-:.ZT]/g, "");
-      const snapshotVersion = `${version}.${buildDate}`;
-      this.project.updateVersion(snapshotVersion);
-      console.log(`Updated snapshot version to ${snapshotVersion}`);
+      const publishVersion = this.getNpmPublishVersion();
+      this.project.updateVersion(publishVersion);
+      console.log(`Updated snapshot version to ${publishVersion}`);
     }
 
     const versions = this.project.getVersions();
