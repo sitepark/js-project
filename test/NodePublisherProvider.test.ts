@@ -5,7 +5,7 @@ import { NodePublisherProvider } from "../src/NodePublisherProvider.js";
 describe("NodePublisherProvider", () => {
   describe("getNpmPublishVersion()", () => {
     it("should append the current build time for snapshots", () => {
-      const buildTime = new Date("2026-01-14T03:24:00.123");
+      const buildTime = new Date(Date.UTC(2026, 1, 14, 3, 24, 0, 123));
       const publisher = new NodePublisherProvider(
         {
           getVersion: () => "1.0.0-SNAPSHOT",
@@ -16,12 +16,12 @@ describe("NodePublisherProvider", () => {
         "pnpm",
       );
       expect(publisher.getNpmPublishVersion()).toBe(
-        "1.0.0-SNAPSHOT.20260114022400123",
+        "1.0.0-SNAPSHOT.20260214032400123",
       );
     });
 
     it("should append the feature branch identifier to publishVersion", () => {
-      const buildTime = new Date("2026-01-14T03:24:00.123");
+      const buildTime = new Date(Date.UTC(2026, 1, 14, 3, 24, 0, 123));
       const publisher = new NodePublisherProvider(
         {
           getVersion: () => "1.0.0-SNAPSHOT",
@@ -34,7 +34,7 @@ describe("NodePublisherProvider", () => {
         "pnpm",
       );
       expect(publisher.getNpmPublishVersion()).toBe(
-        "1.0.0-SNAPSHOT.20260114022400123.mein_tolles_krasses_feature_123123",
+        "1.0.0-SNAPSHOT.20260214032400123.mein_tolles_krasses_feature_123123",
       );
     });
   });
