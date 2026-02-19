@@ -52,8 +52,26 @@ export class Project {
     this.pkg = pkg;
     this.packagePath = packagePath;
     this.git = git;
-    this.branch = this.git.getCurrentBranch();
+    this.branch = this.getCurrentBranch();
     this.buildTime = new Date();
+  }
+
+  private getCurrentBranch(): string {
+    // When running in a github action
+    if (
+      process.env.GITHUB_REF_NAME &&
+      process.env.GITHUB_REF_TYPE === "branch"
+    ) {
+      return process.env.GITHUB_REF_NAME;
+    }
+
+    // When running in a gitlab CI/CD pipeline
+    if (process.env.CI_COMMIT_BRANCH) {
+      return process.env.CI_COMMIT_BRANCH;
+    }
+
+    // When running locally
+    return this.git.getCurrentBranch();
   }
 
   public refresh(): void {

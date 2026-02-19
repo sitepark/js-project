@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Git } from "../src/Git.js";
 import type { PackageJson } from "../src/PackageJson.js";
 import { Project } from "../src/Project.js";
@@ -41,6 +41,21 @@ describe("Project", () => {
   });
 
   describe("getBranch", () => {
+    afterEach(() => vi.unstubAllEnvs());
+
+    it("should return current branch from github env variables if available", () => {
+      vi.stubEnv("GITHUB_REF_NAME", "feature-x");
+      vi.stubEnv("GITHUB_REF_TYPE", "branch");
+      const project = new Project(packageJson, "/test/package.json", mockGit);
+      expect(project.getBranch()).toBe("feature-x");
+    });
+
+    it("should return current branch from gitlab env variables if available", () => {
+      vi.stubEnv("CI_COMMIT_BRANCH", "feature-x");
+      const project = new Project(packageJson, "/test/package.json", mockGit);
+      expect(project.getBranch()).toBe("feature-x");
+    });
+
     it("should return current branch from git", () => {
       const project = new Project(packageJson, "/test/package.json", mockGit);
       expect(project.getBranch()).toBe("main");
