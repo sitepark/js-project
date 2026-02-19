@@ -21,6 +21,13 @@ describe("Project", () => {
       hasUncommittedChanges: vi.fn().mockReturnValue(false),
     } as unknown as Git;
 
+    // Initialize CI Variables as these are also used the implementation for
+    // determining branch names
+    vi.unstubAllEnvs();
+    vi.stubEnv("GITHUB_REF_NAME", "");
+    vi.stubEnv("GITHUB_REF_TYPE", "");
+    vi.stubEnv("CI_COMMIT_BRANCH", "");
+
     packageJson = {
       name: "test-package",
       version: "1.0.0-SNAPSHOT",
@@ -41,8 +48,6 @@ describe("Project", () => {
   });
 
   describe("getBranch", () => {
-    afterEach(() => vi.unstubAllEnvs());
-
     it("should return current branch from github env variables if available", () => {
       vi.stubEnv("GITHUB_REF_NAME", "feature-x");
       vi.stubEnv("GITHUB_REF_TYPE", "branch");
