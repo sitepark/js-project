@@ -1,11 +1,12 @@
 import { execSync } from "node:child_process";
 import type { Project } from "./Project.js";
+import type { PackageManagerIdentifier } from "./PackageManager.js";
 
 export class BuildProvider {
   private project: Project;
-  private packageManager: string;
+  private packageManager: PackageManagerIdentifier;
 
-  constructor(project: Project, packageManager: string) {
+  constructor(project: Project, packageManager: PackageManagerIdentifier) {
     this.project = project;
     this.packageManager = packageManager;
   }
