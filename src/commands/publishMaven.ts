@@ -1,7 +1,6 @@
 import { BuildProvider } from "../BuildProvider.js";
 import { Git } from "../Git.js";
 import { MavenPublisher, type MavenRepository } from "../MavenPublisher.js";
-import { NodePublisherProvider } from "../NodePublisherProvider.js";
 import type { PackageManagerIdentifier } from "../PackageManager.js";
 import { Project } from "../Project.js";
 
