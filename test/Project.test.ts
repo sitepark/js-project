@@ -322,4 +322,112 @@ describe("Project", () => {
       );
     });
   });
+
+  describe("getScope", () => {
+    it("should return the scope part of the package name", () => {
+      const project = new Project(
+        {
+          name: "@sitepark/test-package",
+          version: "1.0.0-SNAPSHOT",
+        },
+        "/test/package.json",
+        mockGit,
+      );
+      expect(project.getScope()).toBe("sitepark");
+    });
+
+    it("should return empty string project doesnt have a scope", () => {
+      const project = new Project(
+        {
+          name: "test-package",
+          version: "1.0.0-SNAPSHOT",
+        },
+        "/test/package.json",
+        mockGit,
+      );
+      expect(project.getScope()).toBe("");
+    });
+  });
+
+  describe("hasScope", () => {
+    it("should return true if project has scope", () => {
+      const project = new Project(
+        {
+          name: "@sitepark/test-package",
+          version: "1.0.0-SNAPSHOT",
+        },
+        "/test/package.json",
+        mockGit,
+      );
+      expect(project.hasScope()).toBe(true);
+    });
+
+    it("should return false if project doesnt have a scope", () => {
+      const project = new Project(
+        {
+          name: "test-package",
+          version: "1.0.0-SNAPSHOT",
+        },
+        "/test/package.json",
+        mockGit,
+      );
+      expect(project.hasScope()).toBe(false);
+    });
+  });
+
+  describe("getNameWithoutScope", () => {
+    it("should return the project name without scope", () => {
+      const projectWithScope = new Project(
+        {
+          name: "@sitepark/test-package",
+          version: "1.0.0-SNAPSHOT",
+        },
+        "/test/package.json",
+        mockGit,
+      );
+      expect(projectWithScope.getNameWithoutScope()).toBe("test-package");
+
+      const projectWithoutScope = new Project(
+        {
+          name: "test-package",
+          version: "1.0.0-SNAPSHOT",
+        },
+        "/test/package.json",
+        mockGit,
+      );
+      expect(projectWithoutScope.getNameWithoutScope()).toBe("test-package");
+    });
+  });
+
+  describe("getMavenVersion", () => {
+    it.each([
+      { version: "1.0.0", branch: "main", expected: "1.0.0" },
+      { version: "1.0.0-SNAPSHOT", branch: "main", expected: "1.0.0-SNAPSHOT" },
+      {
+        version: "1.0.0-SNAPSHOT.0",
+        branch: "main",
+        expected: "1.0.0-SNAPSHOT",
+      },
+      {
+        version: "1.0.0-SNAPSHOT.0",
+        branch: "feature/test",
+        expected: "1.0.0-test-SNAPSHOT",
+      },
+    ])(
+      "version: $version on $branch -> $expected",
+      ({ version, branch, expected }) => {
+        vi.mocked(mockGit.getCurrentBranch).mockReturnValue(branch);
+        const project = new Project(
+          {
+            name: "@sitepark/test-package",
+            version: version,
+          },
+          "/test/package.json",
+          mockGit,
+        );
+
+        expect(project.getMavenVersion()).toBe(expected);
+      },
+    );
+  });
 });

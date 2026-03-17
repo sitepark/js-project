@@ -159,6 +159,7 @@ js-project release [--package-manager <yarn|npm|pnpm>]
    - `pnpm test` (if script exists)
    - `pnpm verify` (if script exists)
    - `pnpm build` (if script exists)
+   - `pnpm publish` (if script exists — optional publish hook, e.g. for additional artifact publishing)
    - Publishes to npm registry
 5. Commits release version: `ci(release): updating package.json set version to X.Y.Z`
 6. Creates Git tag: `X.Y.Z` with message "Release Version X.Y.Z"
@@ -217,6 +218,42 @@ js-project publish [--package-manager <yarn|npm|pnpm>]
 5. Restores original version in package.json (for SNAPSHOT publishes)
 
 **Use case**: Typically called as part of the `release` command, but can be used independently to publish without version changes.
+
+---
+
+### publishMaven
+
+Packs the project and publishes it as a `tar.gz` artifact to a Maven repository (e.g., Nexus/Artifactory).
+
+```bash
+js-project publishMaven --repository-id <id> --repository-url <url> [--package-manager <yarn|npm|pnpm>]
+```
+
+**Required options**:
+
+- `--repository-id`: The Maven repository ID (matches a server entry in `~/.m2/settings.xml` for authentication). See the [maven-deploy-plugin docs](https://maven.apache.org/plugins/maven-deploy-plugin/deploy-file-mojo.html#repositoryId) for details.
+- `--repository-url`: The URL of the Maven repository to deploy to.
+
+**What it does**:
+
+1. Packs the project into a `tar.gz` file using the package manager's `pack` command
+2. Installs the artifact to the local Maven repository (`~/.m2`) via `maven-install-plugin:install-file`
+3. Deploys the artifact to the remote Maven repository via `maven-deploy-plugin:deploy-file`
+   - `groupId`: `com.sitepark.frontend`
+   - `artifactId`: package name without scope (e.g., `js-project` for `@sitepark/js-project`)
+   - `version`: Maven-compatible version derived from the package version
+   - `packaging`: `tar.gz`
+4. Removes the temporary pack file after publishing (even on failure)
+
+**Example**:
+
+```bash
+js-project publishMaven \
+  --repository-id nexus \
+  --repository-url https://nexus.example.com/repository/npm-frontend
+```
+
+**Use case**: Publish a frontend package to a Maven-based artifact repository so it can be consumed by Java/Maven projects as a versioned dependency.
 
 ---
 
@@ -345,6 +382,7 @@ js-project/
 │   ├── ReleaseManagement.ts
 │   ├── BuildProvider.ts
 │   ├── PublisherProvider.ts
+│   ├── MavenPublisher.ts
 │   ├── VerificationReport.ts
 │   └── version.ts          # Version utilities
 ├── test/                   # Test files (87 tests)

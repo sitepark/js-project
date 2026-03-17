@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      maven:
+        specifier: ^5.0.0
+        version: 5.0.0
       semver:
         specifier: ^7.7.4
         version: 7.7.4
@@ -837,6 +840,10 @@ packages:
   make-dir@4.0.0:
     resolution: {integrity: sha512-hXdUTZYIVOt1Ex//jAQi+wTZZpUpwBj/0QsOzqegb3rGMMeJiSEu5xLHnYfBrRV4RH2+OCSOO95Is/7x1WJ4bw==}
     engines: {node: '>=10'}
+
+  maven@5.0.0:
+    resolution: {integrity: sha512-GFor/ZwWLCYXTY5GnuH2l78O21FBLzTHA37kZNHH8MuahcLTQGHXTgC2x7dp+IQyEHGt4RrI/vCcy6lL8PqNoA==}
+    engines: {node: '>=12.0.0'}
 
   micromatch@4.0.8:
     resolution: {integrity: sha512-PXwfBhYu0hBCPw8Dn0E+WDYb7af3dSLVWKi3HGv84IdF4TyFoC0ysxFd0Goxw7nSv4T/PzEJQxsYsEiFCKo2BA==}
@@ -1874,6 +1881,8 @@ snapshots:
   make-dir@4.0.0:
     dependencies:
       semver: 7.7.4
+
+  maven@5.0.0: {}
 
   micromatch@4.0.8:
     dependencies:
