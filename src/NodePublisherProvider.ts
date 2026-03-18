@@ -1,6 +1,7 @@
 import { execSync } from "node:child_process";
 import type { Project } from "./Project.js";
 import { greaterThanEqualsVersion } from "./version.js";
+import type { PackageManagerIdentifier } from "./PackageManager.js";
 
 export interface PublisherProvider {
   publish(): Promise<void>;
@@ -8,9 +9,9 @@ export interface PublisherProvider {
 
 export class NodePublisherProvider implements PublisherProvider {
   private project: Project;
-  private packageManager: string;
+  private packageManager: PackageManagerIdentifier;
 
-  constructor(project: Project, packageManager: string) {
+  constructor(project: Project, packageManager: PackageManagerIdentifier) {
     this.project = project;
     this.packageManager = packageManager;
   }

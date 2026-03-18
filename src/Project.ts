@@ -2,6 +2,8 @@ import { readFileSync, writeFileSync } from "fs";
 import path from "path";
 import { Git } from "./Git.js";
 import type { PackageJson } from "./PackageJson.js";
+import semver from "semver";
+
 import {
   escapeVersionIdentifierForMaven,
   escapeVersionIdentifierForNpm,
@@ -10,6 +12,7 @@ import {
   isSnapshot,
   releaseVersion,
 } from "./version.js";
+import type { PackageManagerIdentifier } from "./PackageManager.js";
 
 type DependencyType =
   | "dependencies"
@@ -22,13 +25,13 @@ export interface DependencyInfo {
   versionRange: string;
 }
 
-export function defaultPackageManager(): string {
+export function defaultPackageManager(): PackageManagerIdentifier {
   if (process.env.JS_PROJECT_PACKAGE_MANAGER === undefined) {
     throw new Error(
       "JS_PROJECT_PACKAGE_MANAGER environment variable is not set",
     );
   }
-  return process.env.JS_PROJECT_PACKAGE_MANAGER;
+  return process.env.JS_PROJECT_PACKAGE_MANAGER as PackageManagerIdentifier;
 }
 
 export class Project {
@@ -83,6 +86,35 @@ export class Project {
     return this.pkg.name || "unnamed-package";
   }
 
+  /**
+   * Returns the scope of the package or empty string
+   * if project doesnt have a scope.
+   *
+   * Example: @sitepark/foo -> sitepark
+   */
+  getScope(): string {
+    if (!this.hasScope()) {
+      return "";
+    }
+    const name = this.getName();
+    return name.substring(1, name.indexOf("/"));
+  }
+
+  public hasScope(): boolean {
+    const name = this.getName();
+    return name.indexOf("@") > -1;
+  }
+
+  public getNameWithoutScope(): string {
+    const name = this.getName();
+    if (!this.hasScope()) {
+      return name;
+    }
+
+    const scope = this.getScope();
+    return name.substring(scope.length + 2);
+  }
+
   public getPackageJson(): PackageJson {
     return this.pkg;
   }
@@ -101,6 +133,31 @@ export class Project {
 
   public getVersion(): string {
     return this.pkg.version || "1.0.0-SNAPSHOT";
+  }
+
+  public getMavenVersion(): string {
+    let mavenVersion = this.getVersion();
+
+    if (isSnapshot(mavenVersion)) {
+      // Säubert eine Snapshot Version: 1.0.0-SNAPSHOT.0 -> 1.0.0-SNAPSHOT
+      mavenVersion = mavenVersion.replace(/-SNAPSHOT\.\d*$/, "-SNAPSHOT");
+      if (this.getBranch().startsWith("feature/")) {
+        const featureName = this.getFeatureBranchVersionIdentifier("maven");
+        const version = semver.parse(mavenVersion);
+        if (version) {
+          mavenVersion = `${version.major}.${version.minor}.${
+            version.patch
+          }-${featureName}-${version.prerelease.join("-")}`;
+        }
+      }
+    }
+
+    // NPM-Version
+    // 1.1.0-SNAPSHOT.12839182389123.mein_tolles_krasses_feature_123123
+
+    // Maven-Version
+    // 1.1.0-mein_tolles_krasses_feature_123123-SNAPSHOT
+    return mavenVersion;
   }
 
   public getVersions(): string[] {

@@ -125,6 +125,7 @@ export class ReleaseManagement {
     this.git.pushOrigin(this.project.getBranch());
 
     await this.publisherProvider.publish();
+    this.buildProvider.publish();
 
     const nextSnapshotVersion = this.project.getNextSnapshotVersion();
     this.project.updateVersion(nextSnapshotVersion);

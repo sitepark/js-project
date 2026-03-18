@@ -42,6 +42,7 @@ describe("ReleaseManagement", () => {
       test: vi.fn(),
       verify: vi.fn(),
       build: vi.fn(),
+      publish: vi.fn(),
     } as unknown as BuildProvider;
 
     mockPublisherProvider = {
