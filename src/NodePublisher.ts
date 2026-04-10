@@ -3,6 +3,7 @@ import type { Project } from "./Project.js";
 import type { SupportedPackageManager } from "./packageManager.js";
 import { greaterThanEqualsVersion } from "./version.js";
 import type { Publisher } from "./Publisher.js";
+import { BranchType } from "./BranchType.js";
 export class NodePublisher implements Publisher {
   private project: Project;
   private packageManager: SupportedPackageManager;
@@ -25,8 +26,7 @@ export class NodePublisher implements Publisher {
       .replace(/[-:.ZT]/g, "");
     versionString = `${versionString}.${buildDate}`;
 
-    const isOnFeatureBranch = this.project.getBranch().startsWith("feature/");
-    if (isOnFeatureBranch) {
+    if (this.project.isFeatureBranch()) {
       // Feature-Branch-Name angängen
       // 1.1.0-SNAPSHOT.12839182389123.mein_tolles_krasses_feature_123123
       versionString = `${versionString}.${this.project.getFeatureBranchVersionIdentifier()}`;
@@ -35,6 +35,21 @@ export class NodePublisher implements Publisher {
   }
 
   public async publish(): Promise<void> {
+    if (this.project.getBranchType() === BranchType.Unknown) {
+      throw new Error(
+        `Unable to publish on unknown branch type "${this.project.getBranch()}"`,
+      );
+    }
+
+    if (
+      this.project.getBranchType() === BranchType.Feature &&
+      !this.project.isSnapshot()
+    ) {
+      throw new Error(
+        `Unable to publish release version on feature branch "${this.project.getBranch()}"`,
+      );
+    }
+
     const registry = this.project.isRelease()
       ? this.project.getReleaseRegistry()
       : this.project.getSnapshotRegistry();

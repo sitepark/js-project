@@ -10,6 +10,7 @@ import {
   isSnapshot,
   releaseVersion,
 } from "./version.js";
+import { BranchType } from "./BranchType.js";
 
 type DependencyType =
   | "dependencies"
@@ -151,6 +152,23 @@ export class Project {
     return this.branch;
   }
 
+  public getBranchType(): BranchType {
+    const branch = this.getBranch();
+    if (branch === "main") {
+      return BranchType.Main;
+    }
+    if (branch.startsWith("feature/")) {
+      return BranchType.Feature;
+    }
+    if (branch.startsWith("support/")) {
+      return BranchType.Support;
+    }
+    if (branch.startsWith("hotfix/")) {
+      return BranchType.Hotfix;
+    }
+    return BranchType.Unknown;
+  }
+
   public getSnapshotRegistry(): string | undefined {
     return process.env.JS_PROJECT_SNAPSHOT_REGISTRY;
   }
@@ -171,15 +189,19 @@ export class Project {
   }
 
   public isSupportBranch(): boolean {
-    return this.branch.startsWith("support/");
+    return this.getBranchType() === BranchType.Support;
   }
 
   public isHotfixBranch(): boolean {
-    return this.branch.startsWith("hotfix/");
+    return this.getBranchType() === BranchType.Hotfix;
   }
 
   public isMainBranch(): boolean {
-    return this.branch === "main";
+    return this.getBranchType() === BranchType.Main;
+  }
+
+  public isFeatureBranch(): boolean {
+    return this.getBranchType() === BranchType.Feature;
   }
 
   public getNextReleaseVersion(): string {
