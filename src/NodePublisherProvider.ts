@@ -1,10 +1,10 @@
 import { execSync } from "node:child_process";
+import { BranchType } from "./BranchType.js";
 import type { Project } from "./Project.js";
+import type { Publisher } from "./Publisher.js";
 import type { SupportedPackageManager } from "./packageManager.js";
 import { greaterThanEqualsVersion } from "./version.js";
-import type { Publisher } from "./Publisher.js";
-import { BranchType } from "./BranchType.js";
-export class NodePublisher implements Publisher {
+export class NodePublisherProvider implements Publisher {
   private project: Project;
   private packageManager: SupportedPackageManager;
 
@@ -26,7 +26,7 @@ export class NodePublisher implements Publisher {
       .replace(/[-:.ZT]/g, "");
     versionString = `${versionString}.${buildDate}`;
 
-    if (this.project.isFeatureBranch()) {
+    if (this.project.getBranchType() === BranchType.Feature) {
       // Feature-Branch-Name angängen
       // 1.1.0-SNAPSHOT.12839182389123.mein_tolles_krasses_feature_123123
       versionString = `${versionString}.${this.project.getFeatureBranchVersionIdentifier()}`;
@@ -117,7 +117,7 @@ export class NodePublisher implements Publisher {
       return newestVersion ? "next" : "snapshot";
     }
 
-    if (this.project.isHotfixBranch()) {
+    if (this.project.getBranchType() === BranchType.Hotfix) {
       return "hotfix";
     }
 

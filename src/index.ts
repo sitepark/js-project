@@ -1,5 +1,5 @@
 export { BuildProvider } from "./BuildProvider.js";
-export { NodePublisher } from "./NodePublisher.js";
+export { NodePublisherProvider } from "./NodePublisherProvider.js";
 export type { PackageJson } from "./PackageJson.js";
 export type { DependencyInfo } from "./Project.js";
 export { Project } from "./Project.js";

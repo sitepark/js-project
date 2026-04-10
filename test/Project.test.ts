@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { BranchType } from "../src/BranchType.js";
 import type { Git } from "../src/Git.js";
 import type { PackageJson } from "../src/PackageJson.js";
 import { Project } from "../src/Project.js";
@@ -99,25 +100,25 @@ describe("Project", () => {
     it("should identify main branch", () => {
       vi.mocked(mockGit.getCurrentBranch).mockReturnValue("main");
       const project = new Project(packageJson, "/test/package.json", mockGit);
-      expect(project.isMainBranch()).toBe(true);
-      expect(project.isSupportBranch()).toBe(false);
-      expect(project.isHotfixBranch()).toBe(false);
+      expect(project.getBranchType()).toBe(BranchType.Main);
     });
 
     it("should identify support branch", () => {
       vi.mocked(mockGit.getCurrentBranch).mockReturnValue("support/1.x");
       const project = new Project(packageJson, "/test/package.json", mockGit);
-      expect(project.isMainBranch()).toBe(false);
-      expect(project.isSupportBranch()).toBe(true);
-      expect(project.isHotfixBranch()).toBe(false);
+      expect(project.getBranchType()).toBe(BranchType.Support);
     });
 
     it("should identify hotfix branch", () => {
       vi.mocked(mockGit.getCurrentBranch).mockReturnValue("hotfix/2.1.x");
       const project = new Project(packageJson, "/test/package.json", mockGit);
-      expect(project.isMainBranch()).toBe(false);
-      expect(project.isSupportBranch()).toBe(false);
-      expect(project.isHotfixBranch()).toBe(true);
+      expect(project.getBranchType()).toBe(BranchType.Hotfix);
+    });
+
+    it("should identify unknown branch", () => {
+      vi.mocked(mockGit.getCurrentBranch).mockReturnValue("some-branch");
+      const project = new Project(packageJson, "/test/package.json", mockGit);
+      expect(project.getBranchType()).toBe(BranchType.Unknown);
     });
   });
 

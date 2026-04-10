@@ -3,6 +3,7 @@ import path from "node:path";
 import { Git } from "./Git.js";
 import type { PackageJson } from "./PackageJson.js";
 
+import { BranchType } from "./BranchType.js";
 import {
   escapeVersionIdentifierForNpm,
   incrementMinorVersion,
@@ -10,7 +11,6 @@ import {
   isSnapshot,
   releaseVersion,
 } from "./version.js";
-import { BranchType } from "./BranchType.js";
 
 type DependencyType =
   | "dependencies"
@@ -188,29 +188,13 @@ export class Project {
     return !this.isSnapshot();
   }
 
-  public isSupportBranch(): boolean {
-    return this.getBranchType() === BranchType.Support;
-  }
-
-  public isHotfixBranch(): boolean {
-    return this.getBranchType() === BranchType.Hotfix;
-  }
-
-  public isMainBranch(): boolean {
-    return this.getBranchType() === BranchType.Main;
-  }
-
-  public isFeatureBranch(): boolean {
-    return this.getBranchType() === BranchType.Feature;
-  }
-
   public getNextReleaseVersion(): string {
     return releaseVersion(this.getVersion());
   }
 
   public getNextSnapshotVersion(): string {
     const nextReleaseVersion = this.getNextReleaseVersion();
-    if (this.isHotfixBranch()) {
+    if (this.getBranchType() === BranchType.Hotfix) {
       return `${incrementPatchVersion(nextReleaseVersion)}-SNAPSHOT`;
     }
     return `${incrementMinorVersion(nextReleaseVersion)}-SNAPSHOT`;

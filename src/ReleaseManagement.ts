@@ -1,6 +1,6 @@
+import { BranchType } from "./BranchType.js";
 import type { BuildProvider } from "./BuildProvider.js";
 import type { Git } from "./Git.js";
-import type { NodePublisher } from "./NodePublisher.js";
 import type { Project } from "./Project.js";
 import type { Publisher } from "./Publisher.js";
 import { VerificationReport } from "./VerificationReport.js";
@@ -85,9 +85,9 @@ export class ReleaseManagement {
       );
     }
     if (
-      !this.project.isMainBranch() &&
-      !this.project.isSupportBranch() &&
-      !this.project.isHotfixBranch()
+      ![BranchType.Main, BranchType.Support, BranchType.Hotfix].includes(
+        this.project.getBranchType(),
+      )
     ) {
       throw new Error(
         "No release can be created with branch '" +
