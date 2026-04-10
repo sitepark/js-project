@@ -1,5 +1,5 @@
 import { Git } from "../Git.js";
-import { NodePublisherProvider } from "../NodePublisherProvider.js";
+import { NodePublisher } from "../NodePublisher.js";
 import { Project } from "../Project.js";
 import type { SupportedPackageManager } from "../packageManager.js";
 
@@ -8,6 +8,6 @@ export async function publishCommand(
 ): Promise<void> {
   const git = new Git();
   const project = Project.forCwd(git);
-  const publisherProvider = new NodePublisherProvider(project, packageManager);
+  const publisherProvider = new NodePublisher(project, packageManager);
   await publisherProvider.publish();
 }

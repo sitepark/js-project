@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { BuildProvider } from "../src/BuildProvider.js";
 import type { Git } from "../src/Git.js";
-import type { NodePublisherProvider } from "../src/NodePublisherProvider.js";
+import type { NodePublisher } from "../src/NodePublisher.js";
 import type { Project } from "../src/Project.js";
 import { ReleaseManagement } from "../src/ReleaseManagement.js";
 
@@ -9,7 +9,7 @@ describe("ReleaseManagement", () => {
   let mockProject: Project;
   let mockGit: Git;
   let mockBuildProvider: BuildProvider;
-  let mockPublisherProvider: NodePublisherProvider;
+  let mockPublisherProvider: NodePublisher;
   let releaseManagement: ReleaseManagement;
 
   beforeEach(() => {
@@ -47,7 +47,7 @@ describe("ReleaseManagement", () => {
 
     mockPublisherProvider = {
       publish: vi.fn(),
-    } as unknown as NodePublisherProvider;
+    } as unknown as NodePublisher;
 
     releaseManagement = new ReleaseManagement(
       mockProject,

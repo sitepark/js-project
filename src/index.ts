@@ -1,9 +1,9 @@
 export { BuildProvider } from "./BuildProvider.js";
-export type { PublisherProvider } from "./NodePublisherProvider.js";
-export { NodePublisherProvider } from "./NodePublisherProvider.js";
+export { NodePublisher } from "./NodePublisher.js";
 export type { PackageJson } from "./PackageJson.js";
 export type { DependencyInfo } from "./Project.js";
 export { Project } from "./Project.js";
+export type { Publisher } from "./Publisher.js";
 export {
   defaultPackageManager,
   isSupportedPackageManager,

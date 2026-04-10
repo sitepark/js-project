@@ -2,12 +2,8 @@ import { execSync } from "node:child_process";
 import type { Project } from "./Project.js";
 import type { SupportedPackageManager } from "./packageManager.js";
 import { greaterThanEqualsVersion } from "./version.js";
-
-export interface PublisherProvider {
-  publish(): Promise<void>;
-}
-
-export class NodePublisherProvider implements PublisherProvider {
+import type { Publisher } from "./Publisher.js";
+export class NodePublisher implements Publisher {
   private project: Project;
   private packageManager: SupportedPackageManager;
 
@@ -93,6 +89,10 @@ export class NodePublisherProvider implements PublisherProvider {
       }
     }
     return;
+  }
+
+  public cleanup(): Promise<void> {
+    return Promise.resolve();
   }
 
   private getPublishTag(version: string, lastReleaseVersion: string): string {

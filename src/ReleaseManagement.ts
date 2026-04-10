@@ -1,7 +1,8 @@
 import type { BuildProvider } from "./BuildProvider.js";
 import type { Git } from "./Git.js";
-import type { PublisherProvider } from "./NodePublisherProvider.js";
+import type { NodePublisher } from "./NodePublisher.js";
 import type { Project } from "./Project.js";
+import type { Publisher } from "./Publisher.js";
 import { VerificationReport } from "./VerificationReport.js";
 import { incrementPatchVersion } from "./version.js";
 
@@ -10,7 +11,7 @@ export class ReleaseManagement {
 
   private buildProvider: BuildProvider;
 
-  private publisherProvider: PublisherProvider;
+  private publisherProvider: Publisher;
 
   private git: Git;
 
@@ -18,7 +19,7 @@ export class ReleaseManagement {
     project: Project,
     git: Git,
     buildProvider: BuildProvider,
-    publisherProvider: PublisherProvider,
+    publisherProvider: Publisher,
   ) {
     this.project = project;
     this.git = git;

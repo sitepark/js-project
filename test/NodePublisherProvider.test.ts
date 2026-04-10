@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { Project } from "../src/Project.js";
-import { NodePublisherProvider } from "../src/NodePublisherProvider.js";
+import { NodePublisher } from "../src/NodePublisher.js";
 
 describe("NodePublisherProvider", () => {
   describe("getNpmPublishVersion()", () => {
     it("should append the current build time for snapshots", () => {
       const buildTime = new Date(Date.UTC(2026, 1, 14, 3, 24, 0, 123));
-      const publisher = new NodePublisherProvider(
+      const publisher = new NodePublisher(
         {
           getVersion: () => "1.0.0-SNAPSHOT",
           getBranch: () => "main",
@@ -22,7 +22,7 @@ describe("NodePublisherProvider", () => {
 
     it("should append the feature branch identifier to publishVersion", () => {
       const buildTime = new Date(Date.UTC(2026, 1, 14, 3, 24, 0, 123));
-      const publisher = new NodePublisherProvider(
+      const publisher = new NodePublisher(
         {
           getVersion: () => "1.0.0-SNAPSHOT",
           getBranch: () => "feature/mein_tolles_krasses_feature_123123",
