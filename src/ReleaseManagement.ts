@@ -56,13 +56,12 @@ export class ReleaseManagement {
     }
 
     const lastReleaseVersion =
-      releaseVersions[releaseVersions.length - 1] ?? minor + "." + minor + ".0";
-    const hotfixSnapshotVersion =
-      incrementPatchVersion(lastReleaseVersion) + "-SNAPSHOT";
+      releaseVersions[releaseVersions.length - 1] ?? `${minor}.${minor}.0`;
+    const hotfixSnapshotVersion = `${incrementPatchVersion(lastReleaseVersion)}-SNAPSHOT`;
 
-    console.log("hotfixSnapshotVersion: " + hotfixSnapshotVersion);
+    console.log(`hotfixSnapshotVersion: ${hotfixSnapshotVersion}`);
 
-    const hotfixBranch = "hotfix/" + major + "." + minor + ".x";
+    const hotfixBranch = `hotfix/${major}.${minor}.x`;
     this.git.createBranch(hotfixBranch, lastReleaseVersion);
     this.project.updateVersion(hotfixSnapshotVersion);
     this.buildProvider.formatPackageJson();
@@ -70,7 +69,7 @@ export class ReleaseManagement {
     this.git.commit(
       "package.json",
       "ci(release)",
-      "Updating package.json set version to " + hotfixSnapshotVersion,
+      `Updating package.json set version to ${hotfixSnapshotVersion}`,
     );
     this.git.pushOrigin(hotfixBranch);
 
@@ -117,15 +116,14 @@ export class ReleaseManagement {
     this.git.commit(
       "package.json",
       "ci(release)",
-      "Release " + releaseVersion,
+      `Release ${releaseVersion}`,
       false,
     );
 
-    this.git.createTag(releaseVersion, "Release Version " + releaseVersion);
+    this.git.createTag(releaseVersion, `Release Version ${releaseVersion}`);
     this.git.pushOrigin(this.project.getBranch());
 
     await this.publisherProvider.publish();
-    this.buildProvider.publish();
 
     const nextSnapshotVersion = this.project.getNextSnapshotVersion();
     this.project.updateVersion(nextSnapshotVersion);
@@ -133,7 +131,7 @@ export class ReleaseManagement {
     this.git.commit(
       "package.json",
       "ci(release)",
-      "Updating package.json set version to " + nextSnapshotVersion,
+      `Updating package.json set version to ${nextSnapshotVersion}`,
       false,
     );
 
@@ -150,7 +148,7 @@ export class ReleaseManagement {
     if (this.project.hasUncommittedChanges()) {
       const untractedFiles = this.git.getChangedTrackedFiles();
       throw new Error(
-        msg + "\nUncommitted changes:\n" + untractedFiles.join("\n"),
+        `${msg}\nUncommitted changes:\n${untractedFiles.join("\n")}`,
       );
     }
   }

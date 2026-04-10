@@ -1,5 +1,5 @@
-import type { Project } from "./Project.js";
 import fs from "node:fs/promises";
+import type { Project } from "./Project.js";
 
 export class ProjectCleaner {
   private readonly project: Project;

@@ -1,9 +1,9 @@
 import { exit } from "node:process";
+import type { SupportedPackageManager } from "../packageManager.js";
 import { ReleaseManagementFactory } from "../ReleaseManagementFactory.js";
-import type { PackageManagerIdentifier } from "../PackageManager.js";
 
 export function verifyReleaseCommand(
-  packageManager: PackageManagerIdentifier,
+  packageManager: SupportedPackageManager,
 ): void {
   const releaseManagement = ReleaseManagementFactory.forCwd(packageManager);
   const report = releaseManagement.verifyRelease();

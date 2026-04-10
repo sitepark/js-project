@@ -4,13 +4,13 @@ import {
   NodePublisherProvider,
   type PublisherProvider,
 } from "./NodePublisherProvider.js";
-import type { PackageManagerIdentifier } from "./PackageManager.js";
 import { Project } from "./Project.js";
+import type { SupportedPackageManager } from "./packageManager.js";
 import { ReleaseManagement } from "./ReleaseManagement.js";
 
 export class ReleaseManagementFactory {
   public static forCwd(
-    packageManager: PackageManagerIdentifier,
+    packageManager: SupportedPackageManager,
     buildProvider: BuildProvider | null = null,
     publisherProvider: PublisherProvider | null = null,
   ): ReleaseManagement {

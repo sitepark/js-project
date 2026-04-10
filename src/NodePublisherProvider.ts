@@ -1,7 +1,7 @@
 import { execSync } from "node:child_process";
 import type { Project } from "./Project.js";
+import type { SupportedPackageManager } from "./packageManager.js";
 import { greaterThanEqualsVersion } from "./version.js";
-import type { PackageManagerIdentifier } from "./PackageManager.js";
 
 export interface PublisherProvider {
   publish(): Promise<void>;
@@ -9,9 +9,9 @@ export interface PublisherProvider {
 
 export class NodePublisherProvider implements PublisherProvider {
   private project: Project;
-  private packageManager: PackageManagerIdentifier;
+  private packageManager: SupportedPackageManager;
 
-  constructor(project: Project, packageManager: PackageManagerIdentifier) {
+  constructor(project: Project, packageManager: SupportedPackageManager) {
     this.project = project;
     this.packageManager = packageManager;
   }
@@ -33,9 +33,7 @@ export class NodePublisherProvider implements PublisherProvider {
     if (isOnFeatureBranch) {
       // Feature-Branch-Name angängen
       // 1.1.0-SNAPSHOT.12839182389123.mein_tolles_krasses_feature_123123
-      versionString = `${versionString}.${this.project.getFeatureBranchVersionIdentifier(
-        "npm",
-      )}`;
+      versionString = `${versionString}.${this.project.getFeatureBranchVersionIdentifier()}`;
     }
     return versionString;
   }
@@ -64,7 +62,7 @@ export class NodePublisherProvider implements PublisherProvider {
     );
 
     const tag = this.getPublishTag(version, lastReleaseVersion);
-    console.log("Use tag: " + tag);
+    console.log(`Use tag: ${tag}`);
 
     try {
       const args = [

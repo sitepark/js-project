@@ -1,7 +1,7 @@
-import type { PackageManagerIdentifier } from "../PackageManager.js";
+import type { SupportedPackageManager } from "../packageManager.js";
 import { ReleaseManagementFactory } from "../ReleaseManagementFactory.js";
 
-export function releaseCommand(packageManager: PackageManagerIdentifier): void {
+export function releaseCommand(packageManager: SupportedPackageManager): void {
   const releaseManagement = ReleaseManagementFactory.forCwd(packageManager);
   releaseManagement.release();
 }
