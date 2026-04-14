@@ -137,7 +137,7 @@ Hotfix workflow:
 
 ### Environment Variables
 
-- `JS_PROJECT_PACKAGE_MANAGER` - Default package manager when not specified via CLI (required)
+- `JS_PROJECT_PACKAGE_MANAGER` - Default package manager when not specified via CLI (defaults to pnpm)
 
 ## TypeScript Configuration
 
