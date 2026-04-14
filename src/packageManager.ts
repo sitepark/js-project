@@ -3,14 +3,11 @@ import type { ArgumentsCamelCase } from "yargs";
 export type SupportedPackageManager = "pnpm" | "npm" | "yarn";
 
 export function defaultPackageManager(): SupportedPackageManager {
-  const envPackageManager = process.env.JS_PROJECT_PACKAGE_MANAGER ?? "";
-  if (envPackageManager) {
-    if (!isSupportedPackageManager(envPackageManager)) {
-      throw new Error(`unknown package manager ${envPackageManager}`);
-    }
+  const envPackageManager = process.env.JS_PROJECT_PACKAGE_MANAGER || "pnpm";
+  if (isSupportedPackageManager(envPackageManager)) {
     return envPackageManager;
   }
-  return "pnpm";
+  throw new Error(`unknown package manager ${envPackageManager}`);
 }
 
 export function isSupportedPackageManager(
