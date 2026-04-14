@@ -1,18 +1,16 @@
-import { readFileSync, writeFileSync } from "fs";
-import path from "path";
+import { readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import { Git } from "./Git.js";
 import type { PackageJson } from "./PackageJson.js";
-import semver from "semver";
 
+import { BranchType } from "./BranchType.js";
 import {
-  escapeVersionIdentifierForMaven,
   escapeVersionIdentifierForNpm,
   incrementMinorVersion,
   incrementPatchVersion,
   isSnapshot,
   releaseVersion,
 } from "./version.js";
-import type { PackageManagerIdentifier } from "./PackageManager.js";
 
 type DependencyType =
   | "dependencies"
@@ -23,15 +21,6 @@ type DependencyType =
 export interface DependencyInfo {
   name: string;
   versionRange: string;
-}
-
-export function defaultPackageManager(): PackageManagerIdentifier {
-  if (process.env.JS_PROJECT_PACKAGE_MANAGER === undefined) {
-    throw new Error(
-      "JS_PROJECT_PACKAGE_MANAGER environment variable is not set",
-    );
-  }
-  return process.env.JS_PROJECT_PACKAGE_MANAGER as PackageManagerIdentifier;
 }
 
 export class Project {
@@ -135,31 +124,6 @@ export class Project {
     return this.pkg.version || "1.0.0-SNAPSHOT";
   }
 
-  public getMavenVersion(): string {
-    let mavenVersion = this.getVersion();
-
-    if (isSnapshot(mavenVersion)) {
-      // Säubert eine Snapshot Version: 1.0.0-SNAPSHOT.0 -> 1.0.0-SNAPSHOT
-      mavenVersion = mavenVersion.replace(/-SNAPSHOT\.\d*$/, "-SNAPSHOT");
-      if (this.getBranch().startsWith("feature/")) {
-        const featureName = this.getFeatureBranchVersionIdentifier("maven");
-        const version = semver.parse(mavenVersion);
-        if (version) {
-          mavenVersion = `${version.major}.${version.minor}.${
-            version.patch
-          }-${featureName}-${version.prerelease.join("-")}`;
-        }
-      }
-    }
-
-    // NPM-Version
-    // 1.1.0-SNAPSHOT.12839182389123.mein_tolles_krasses_feature_123123
-
-    // Maven-Version
-    // 1.1.0-mein_tolles_krasses_feature_123123-SNAPSHOT
-    return mavenVersion;
-  }
-
   public getVersions(): string[] {
     return this.git.getVersions();
   }
@@ -168,28 +132,41 @@ export class Project {
     return this.buildTime;
   }
 
-  public getFeatureBranchVersionIdentifier(
-    target: "npm" | "maven",
-  ): string | null {
+  public getFeatureBranchVersionIdentifier(): string | null {
     const matches = this.getBranch().match(/^feature\/(.*)/);
     if (!Array.isArray(matches) || matches.length < 2) {
       return null;
     }
     const rawVersionIdentifier = matches[1] as string;
-    if (target === "maven") {
-      return escapeVersionIdentifierForMaven(rawVersionIdentifier);
-    }
+
     return escapeVersionIdentifierForNpm(rawVersionIdentifier);
   }
 
   public updateVersion(newVersion: string): void {
     this.pkg.version = newVersion;
-    const pkgContent = JSON.stringify(this.pkg, null, 2) + "\n";
+    const pkgContent = `${JSON.stringify(this.pkg, null, 2)}\n`;
     writeFileSync(this.packagePath, pkgContent, "utf8");
   }
 
   public getBranch(): string {
     return this.branch;
+  }
+
+  public getBranchType(): BranchType {
+    const branch = this.getBranch();
+    if (branch === "main") {
+      return BranchType.Main;
+    }
+    if (branch.startsWith("feature/")) {
+      return BranchType.Feature;
+    }
+    if (branch.startsWith("support/")) {
+      return BranchType.Support;
+    }
+    if (branch.startsWith("hotfix/")) {
+      return BranchType.Hotfix;
+    }
+    return BranchType.Unknown;
   }
 
   public getSnapshotRegistry(): string | undefined {
@@ -211,29 +188,16 @@ export class Project {
     return !this.isSnapshot();
   }
 
-  public isSupportBranch(): boolean {
-    return this.branch.startsWith("support/");
-  }
-
-  public isHotfixBranch(): boolean {
-    return this.branch.startsWith("hotfix/");
-  }
-
-  public isMainBranch(): boolean {
-    return this.branch === "main";
-  }
-
   public getNextReleaseVersion(): string {
     return releaseVersion(this.getVersion());
   }
 
   public getNextSnapshotVersion(): string {
     const nextReleaseVersion = this.getNextReleaseVersion();
-    if (this.isHotfixBranch()) {
-      return incrementPatchVersion(nextReleaseVersion) + "-SNAPSHOT";
-    } else {
-      return incrementMinorVersion(nextReleaseVersion) + "-SNAPSHOT";
+    if (this.getBranchType() === BranchType.Hotfix) {
+      return `${incrementPatchVersion(nextReleaseVersion)}-SNAPSHOT`;
     }
+    return `${incrementMinorVersion(nextReleaseVersion)}-SNAPSHOT`;
   }
 
   /**
@@ -241,7 +205,7 @@ export class Project {
    * @returns
    */
   public hasPublishConfig(): boolean {
-    return !!(this.pkg.publishConfig && this.pkg.publishConfig.registry);
+    return !!this.pkg.publishConfig?.registry;
   }
 
   /**
@@ -256,7 +220,7 @@ export class Project {
     type: DependencyType = "dependencies",
   ): DependencyInfo[] {
     const snapshots: DependencyInfo[] = [];
-    if (!this.pkg.hasOwnProperty(type)) {
+    if (!Object.hasOwn(this.pkg, type)) {
       return [];
     }
 
@@ -288,10 +252,6 @@ export class Project {
    * Checks whether the current package has a script with the specified name
    */
   public hasScript(scriptName: string): boolean {
-    const scripts = this.pkg.scripts;
-    if (!scripts) {
-      return false;
-    }
-    return scripts.hasOwnProperty(scriptName);
+    return Object.hasOwn(this.pkg.scripts ?? {}, scriptName);
   }
 }

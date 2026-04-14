@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { BranchType } from "../src/BranchType.js";
 import type { Git } from "../src/Git.js";
 import type { PackageJson } from "../src/PackageJson.js";
 import { Project } from "../src/Project.js";
@@ -99,25 +100,25 @@ describe("Project", () => {
     it("should identify main branch", () => {
       vi.mocked(mockGit.getCurrentBranch).mockReturnValue("main");
       const project = new Project(packageJson, "/test/package.json", mockGit);
-      expect(project.isMainBranch()).toBe(true);
-      expect(project.isSupportBranch()).toBe(false);
-      expect(project.isHotfixBranch()).toBe(false);
+      expect(project.getBranchType()).toBe(BranchType.Main);
     });
 
     it("should identify support branch", () => {
       vi.mocked(mockGit.getCurrentBranch).mockReturnValue("support/1.x");
       const project = new Project(packageJson, "/test/package.json", mockGit);
-      expect(project.isMainBranch()).toBe(false);
-      expect(project.isSupportBranch()).toBe(true);
-      expect(project.isHotfixBranch()).toBe(false);
+      expect(project.getBranchType()).toBe(BranchType.Support);
     });
 
     it("should identify hotfix branch", () => {
       vi.mocked(mockGit.getCurrentBranch).mockReturnValue("hotfix/2.1.x");
       const project = new Project(packageJson, "/test/package.json", mockGit);
-      expect(project.isMainBranch()).toBe(false);
-      expect(project.isSupportBranch()).toBe(false);
-      expect(project.isHotfixBranch()).toBe(true);
+      expect(project.getBranchType()).toBe(BranchType.Hotfix);
+    });
+
+    it("should identify unknown branch", () => {
+      vi.mocked(mockGit.getCurrentBranch).mockReturnValue("some-branch");
+      const project = new Project(packageJson, "/test/package.json", mockGit);
+      expect(project.getBranchType()).toBe(BranchType.Unknown);
     });
   });
 
@@ -305,8 +306,7 @@ describe("Project", () => {
     it("should return null on non feature branches", () => {
       vi.mocked(mockGit.getCurrentBranch).mockReturnValue("main");
       const project = new Project(packageJson, "/test/package.json", mockGit);
-      expect(project.getFeatureBranchVersionIdentifier("npm")).toBe(null);
-      expect(project.getFeatureBranchVersionIdentifier("maven")).toBe(null);
+      expect(project.getFeatureBranchVersionIdentifier()).toBe(null);
     });
 
     it("should return the version identifier escaped", () => {
@@ -314,11 +314,8 @@ describe("Project", () => {
         "feature/mein-tolles-feature-öüüöü-#123123###",
       );
       const project = new Project(packageJson, "/test/package.json", mockGit);
-      expect(project.getFeatureBranchVersionIdentifier("npm")).toBe(
+      expect(project.getFeatureBranchVersionIdentifier()).toBe(
         "mein-tolles-feature-öüüöü-123123",
-      );
-      expect(project.getFeatureBranchVersionIdentifier("maven")).toBe(
-        "mein_tolles_feature_öüüöü_123123",
       );
     });
   });
@@ -397,37 +394,5 @@ describe("Project", () => {
       );
       expect(projectWithoutScope.getNameWithoutScope()).toBe("test-package");
     });
-  });
-
-  describe("getMavenVersion", () => {
-    it.each([
-      { version: "1.0.0", branch: "main", expected: "1.0.0" },
-      { version: "1.0.0-SNAPSHOT", branch: "main", expected: "1.0.0-SNAPSHOT" },
-      {
-        version: "1.0.0-SNAPSHOT.0",
-        branch: "main",
-        expected: "1.0.0-SNAPSHOT",
-      },
-      {
-        version: "1.0.0-SNAPSHOT.0",
-        branch: "feature/test",
-        expected: "1.0.0-test-SNAPSHOT",
-      },
-    ])(
-      "version: $version on $branch -> $expected",
-      ({ version, branch, expected }) => {
-        vi.mocked(mockGit.getCurrentBranch).mockReturnValue(branch);
-        const project = new Project(
-          {
-            name: "@sitepark/test-package",
-            version: version,
-          },
-          "/test/package.json",
-          mockGit,
-        );
-
-        expect(project.getMavenVersion()).toBe(expected);
-      },
-    );
   });
 });

@@ -1,17 +1,14 @@
 import { execSync } from "node:child_process";
+import { BranchType } from "./BranchType.js";
 import type { Project } from "./Project.js";
+import type { Publisher } from "./Publisher.js";
+import type { SupportedPackageManager } from "./packageManager.js";
 import { greaterThanEqualsVersion } from "./version.js";
-import type { PackageManagerIdentifier } from "./PackageManager.js";
-
-export interface PublisherProvider {
-  publish(): Promise<void>;
-}
-
-export class NodePublisherProvider implements PublisherProvider {
+export class NodePublisherProvider implements Publisher {
   private project: Project;
-  private packageManager: PackageManagerIdentifier;
+  private packageManager: SupportedPackageManager;
 
-  constructor(project: Project, packageManager: PackageManagerIdentifier) {
+  constructor(project: Project, packageManager: SupportedPackageManager) {
     this.project = project;
     this.packageManager = packageManager;
   }
@@ -29,18 +26,30 @@ export class NodePublisherProvider implements PublisherProvider {
       .replace(/[-:.ZT]/g, "");
     versionString = `${versionString}.${buildDate}`;
 
-    const isOnFeatureBranch = this.project.getBranch().startsWith("feature/");
-    if (isOnFeatureBranch) {
+    if (this.project.getBranchType() === BranchType.Feature) {
       // Feature-Branch-Name angängen
       // 1.1.0-SNAPSHOT.12839182389123.mein_tolles_krasses_feature_123123
-      versionString = `${versionString}.${this.project.getFeatureBranchVersionIdentifier(
-        "npm",
-      )}`;
+      versionString = `${versionString}.${this.project.getFeatureBranchVersionIdentifier()}`;
     }
     return versionString;
   }
 
   public async publish(): Promise<void> {
+    if (this.project.getBranchType() === BranchType.Unknown) {
+      throw new Error(
+        `Unable to publish on unknown branch type "${this.project.getBranch()}"`,
+      );
+    }
+
+    if (
+      this.project.getBranchType() === BranchType.Feature &&
+      !this.project.isSnapshot()
+    ) {
+      throw new Error(
+        `Unable to publish release version on feature branch "${this.project.getBranch()}"`,
+      );
+    }
+
     const registry = this.project.isRelease()
       ? this.project.getReleaseRegistry()
       : this.project.getSnapshotRegistry();
@@ -64,7 +73,7 @@ export class NodePublisherProvider implements PublisherProvider {
     );
 
     const tag = this.getPublishTag(version, lastReleaseVersion);
-    console.log("Use tag: " + tag);
+    console.log(`Use tag: ${tag}`);
 
     try {
       const args = [
@@ -97,6 +106,10 @@ export class NodePublisherProvider implements PublisherProvider {
     return;
   }
 
+  public cleanup(): Promise<void> {
+    return Promise.resolve();
+  }
+
   private getPublishTag(version: string, lastReleaseVersion: string): string {
     const newestVersion = greaterThanEqualsVersion(version, lastReleaseVersion);
 
@@ -104,7 +117,7 @@ export class NodePublisherProvider implements PublisherProvider {
       return newestVersion ? "next" : "snapshot";
     }
 
-    if (this.project.isHotfixBranch()) {
+    if (this.project.getBranchType() === BranchType.Hotfix) {
       return "hotfix";
     }
 

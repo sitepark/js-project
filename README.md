@@ -221,42 +221,6 @@ js-project publish [--package-manager <yarn|npm|pnpm>]
 
 ---
 
-### publishMaven
-
-Packs the project and publishes it as a `tar.gz` artifact to a Maven repository (e.g., Nexus/Artifactory).
-
-```bash
-js-project publishMaven --repository-id <id> --repository-url <url> [--package-manager <yarn|npm|pnpm>]
-```
-
-**Required options**:
-
-- `--repository-id`: The Maven repository ID (matches a server entry in `~/.m2/settings.xml` for authentication). See the [maven-deploy-plugin docs](https://maven.apache.org/plugins/maven-deploy-plugin/deploy-file-mojo.html#repositoryId) for details.
-- `--repository-url`: The URL of the Maven repository to deploy to.
-
-**What it does**:
-
-1. Packs the project into a `tar.gz` file using the package manager's `pack` command
-2. Installs the artifact to the local Maven repository (`~/.m2`) via `maven-install-plugin:install-file`
-3. Deploys the artifact to the remote Maven repository via `maven-deploy-plugin:deploy-file`
-   - `groupId`: `com.sitepark.frontend`
-   - `artifactId`: package name without scope (e.g., `js-project` for `@sitepark/js-project`)
-   - `version`: Maven-compatible version derived from the package version
-   - `packaging`: `tar.gz`
-4. Removes the temporary pack file after publishing (even on failure)
-
-**Example**:
-
-```bash
-js-project publishMaven \
-  --repository-id nexus \
-  --repository-url https://nexus.example.com/repository/npm-frontend
-```
-
-**Use case**: Publish a frontend package to a Maven-based artifact repository so it can be consumed by Java/Maven projects as a versioned dependency.
-
----
-
 ## SNAPSHOT Versions
 
 SNAPSHOT versions are pre-release development versions used during active development before creating an official release.
@@ -382,7 +346,6 @@ js-project/
 │   ├── ReleaseManagement.ts
 │   ├── BuildProvider.ts
 │   ├── PublisherProvider.ts
-│   ├── MavenPublisher.ts
 │   ├── VerificationReport.ts
 │   └── version.ts          # Version utilities
 ├── test/                   # Test files (87 tests)

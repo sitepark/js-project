@@ -1,8 +1,8 @@
-import type { PackageManagerIdentifier } from "../PackageManager.js";
+import type { SupportedPackageManager } from "../packageManager.js";
 import { ReleaseManagementFactory } from "../ReleaseManagementFactory.js";
 
 export function startHotfixCommand(
-  packageManager: PackageManagerIdentifier,
+  packageManager: SupportedPackageManager,
   tag: string,
 ): void {
   const releaseManagement = ReleaseManagementFactory.forCwd(packageManager);

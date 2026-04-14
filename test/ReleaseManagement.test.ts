@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { BranchType } from "../src/BranchType.js";
 import type { BuildProvider } from "../src/BuildProvider.js";
 import type { Git } from "../src/Git.js";
 import type { NodePublisherProvider } from "../src/NodePublisherProvider.js";
@@ -14,11 +15,9 @@ describe("ReleaseManagement", () => {
 
   beforeEach(() => {
     mockProject = {
+      getBranchType: vi.fn(),
       isRelease: vi.fn(),
       isSnapshot: vi.fn(),
-      isMainBranch: vi.fn(),
-      isSupportBranch: vi.fn(),
-      isHotfixBranch: vi.fn(),
       getVersion: vi.fn(),
       getBranch: vi.fn(),
       getNextReleaseVersion: vi.fn(),
@@ -149,12 +148,12 @@ describe("ReleaseManagement", () => {
 
   describe("release", () => {
     beforeEach(() => {
-      vi.mocked(mockProject.isSnapshot).mockReturnValue(true);
-      vi.mocked(mockProject.isMainBranch).mockReturnValue(true);
+      vi.mocked(mockProject.getBranchType).mockReturnValue(BranchType.Main);
       vi.mocked(mockProject.getNextReleaseVersion).mockReturnValue("1.5.0");
       vi.mocked(mockProject.getNextSnapshotVersion).mockReturnValue(
         "1.6.0-SNAPSHOT",
       );
+      vi.mocked(mockProject.isSnapshot).mockReturnValue(true);
       vi.mocked(mockProject.hasUncommittedChanges).mockReturnValue(false);
 
       vi.spyOn(console, "group").mockImplementation(() => {});
@@ -171,9 +170,7 @@ describe("ReleaseManagement", () => {
     });
 
     it("should throw error when not on main, support or hotfix branch", async () => {
-      vi.mocked(mockProject.isMainBranch).mockReturnValue(false);
-      vi.mocked(mockProject.isSupportBranch).mockReturnValue(false);
-      vi.mocked(mockProject.isHotfixBranch).mockReturnValue(false);
+      vi.mocked(mockProject.getBranchType).mockReturnValue(BranchType.Feature);
       vi.mocked(mockProject.getBranch).mockReturnValue("feature/test");
 
       await expect(releaseManagement.release()).rejects.toThrow(
@@ -182,7 +179,9 @@ describe("ReleaseManagement", () => {
     });
 
     it("should throw error when release version is null", async () => {
-      vi.mocked(mockProject.getNextReleaseVersion).mockReturnValue(null as any);
+      vi.mocked(mockProject.getNextReleaseVersion).mockReturnValue(
+        null as unknown as string,
+      );
 
       await expect(releaseManagement.release()).rejects.toThrow(
         "Unable to determine release version",
@@ -269,8 +268,9 @@ describe("ReleaseManagement", () => {
     });
 
     it("should work with support branch", async () => {
-      vi.mocked(mockProject.isMainBranch).mockReturnValue(false);
-      vi.mocked(mockProject.isSupportBranch).mockReturnValue(true);
+      vi.mocked(mockProject.isSnapshot).mockReturnValue(true);
+      vi.mocked(mockProject.isRelease).mockReturnValue(true);
+      vi.mocked(mockProject.getBranchType).mockReturnValue(BranchType.Support);
 
       const result = await releaseManagement.release();
 
@@ -278,8 +278,9 @@ describe("ReleaseManagement", () => {
     });
 
     it("should work with hotfix branch", async () => {
-      vi.mocked(mockProject.isMainBranch).mockReturnValue(false);
-      vi.mocked(mockProject.isHotfixBranch).mockReturnValue(true);
+      vi.mocked(mockProject.isSnapshot).mockReturnValue(true);
+      vi.mocked(mockProject.isRelease).mockReturnValue(true);
+      vi.mocked(mockProject.getBranchType).mockReturnValue(BranchType.Hotfix);
 
       const result = await releaseManagement.release();
 

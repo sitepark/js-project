@@ -1,18 +1,16 @@
 import { BuildProvider } from "./BuildProvider.js";
 import { Git } from "./Git.js";
-import {
-  NodePublisherProvider,
-  type PublisherProvider,
-} from "./NodePublisherProvider.js";
-import type { PackageManagerIdentifier } from "./PackageManager.js";
+import { NodePublisherProvider } from "./NodePublisherProvider.js";
 import { Project } from "./Project.js";
+import type { Publisher } from "./Publisher.js";
+import type { SupportedPackageManager } from "./packageManager.js";
 import { ReleaseManagement } from "./ReleaseManagement.js";
 
 export class ReleaseManagementFactory {
   public static forCwd(
-    packageManager: PackageManagerIdentifier,
+    packageManager: SupportedPackageManager,
     buildProvider: BuildProvider | null = null,
-    publisherProvider: PublisherProvider | null = null,
+    publisherProvider: Publisher | null = null,
   ): ReleaseManagement {
     const git = new Git();
     const project = Project.forCwd(git);

@@ -1,7 +1,8 @@
+import { BranchType } from "./BranchType.js";
 import type { BuildProvider } from "./BuildProvider.js";
 import type { Git } from "./Git.js";
-import type { PublisherProvider } from "./NodePublisherProvider.js";
 import type { Project } from "./Project.js";
+import type { Publisher } from "./Publisher.js";
 import { VerificationReport } from "./VerificationReport.js";
 import { incrementPatchVersion } from "./version.js";
 
@@ -10,7 +11,7 @@ export class ReleaseManagement {
 
   private buildProvider: BuildProvider;
 
-  private publisherProvider: PublisherProvider;
+  private publisherProvider: Publisher;
 
   private git: Git;
 
@@ -18,7 +19,7 @@ export class ReleaseManagement {
     project: Project,
     git: Git,
     buildProvider: BuildProvider,
-    publisherProvider: PublisherProvider,
+    publisherProvider: Publisher,
   ) {
     this.project = project;
     this.git = git;
@@ -56,13 +57,12 @@ export class ReleaseManagement {
     }
 
     const lastReleaseVersion =
-      releaseVersions[releaseVersions.length - 1] ?? minor + "." + minor + ".0";
-    const hotfixSnapshotVersion =
-      incrementPatchVersion(lastReleaseVersion) + "-SNAPSHOT";
+      releaseVersions[releaseVersions.length - 1] ?? `${minor}.${minor}.0`;
+    const hotfixSnapshotVersion = `${incrementPatchVersion(lastReleaseVersion)}-SNAPSHOT`;
 
-    console.log("hotfixSnapshotVersion: " + hotfixSnapshotVersion);
+    console.log(`hotfixSnapshotVersion: ${hotfixSnapshotVersion}`);
 
-    const hotfixBranch = "hotfix/" + major + "." + minor + ".x";
+    const hotfixBranch = `hotfix/${major}.${minor}.x`;
     this.git.createBranch(hotfixBranch, lastReleaseVersion);
     this.project.updateVersion(hotfixSnapshotVersion);
     this.buildProvider.formatPackageJson();
@@ -70,7 +70,7 @@ export class ReleaseManagement {
     this.git.commit(
       "package.json",
       "ci(release)",
-      "Updating package.json set version to " + hotfixSnapshotVersion,
+      `Updating package.json set version to ${hotfixSnapshotVersion}`,
     );
     this.git.pushOrigin(hotfixBranch);
 
@@ -85,9 +85,9 @@ export class ReleaseManagement {
       );
     }
     if (
-      !this.project.isMainBranch() &&
-      !this.project.isSupportBranch() &&
-      !this.project.isHotfixBranch()
+      ![BranchType.Main, BranchType.Support, BranchType.Hotfix].includes(
+        this.project.getBranchType(),
+      )
     ) {
       throw new Error(
         "No release can be created with branch '" +
@@ -117,15 +117,13 @@ export class ReleaseManagement {
     this.git.commit(
       "package.json",
       "ci(release)",
-      "Release " + releaseVersion,
+      `Release ${releaseVersion}`,
       false,
     );
 
-    this.git.createTag(releaseVersion, "Release Version " + releaseVersion);
-    this.git.pushOrigin(this.project.getBranch());
+    this.git.createTag(releaseVersion, `Release Version ${releaseVersion}`);
 
     await this.publisherProvider.publish();
-    this.buildProvider.publish();
 
     const nextSnapshotVersion = this.project.getNextSnapshotVersion();
     this.project.updateVersion(nextSnapshotVersion);
@@ -133,7 +131,7 @@ export class ReleaseManagement {
     this.git.commit(
       "package.json",
       "ci(release)",
-      "Updating package.json set version to " + nextSnapshotVersion,
+      `Updating package.json set version to ${nextSnapshotVersion}`,
       false,
     );
 
@@ -150,7 +148,7 @@ export class ReleaseManagement {
     if (this.project.hasUncommittedChanges()) {
       const untractedFiles = this.git.getChangedTrackedFiles();
       throw new Error(
-        msg + "\nUncommitted changes:\n" + untractedFiles.join("\n"),
+        `${msg}\nUncommitted changes:\n${untractedFiles.join("\n")}`,
       );
     }
   }

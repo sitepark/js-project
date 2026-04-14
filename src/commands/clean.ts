@@ -1,5 +1,4 @@
 import { Git } from "../Git.js";
-import { NodePublisherProvider } from "../NodePublisherProvider.js";
 import { Project } from "../Project.js";
 import { ProjectCleaner } from "../ProjectCleaner.js";
 

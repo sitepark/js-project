@@ -1,17 +1,15 @@
 #!/usr/bin/env node
 
-import yargs, { type ArgumentsCamelCase } from "yargs";
+import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
+import { cleanCommand } from "./commands/clean.js";
 import { publishCommand } from "./commands/publish.js";
 import { releaseCommand } from "./commands/release.js";
 import { releaseVersionCommand } from "./commands/releaseVersion.js";
 import { startHotfixCommand } from "./commands/startHotfix.js";
 import { verifyReleaseCommand } from "./commands/verifyRelease.js";
 import { versionCommand } from "./commands/version.js";
-import { defaultPackageManager } from "./Project.js";
-import { cleanCommand } from "./commands/clean.js";
-import type { PackageManagerIdentifier } from "./PackageManager.js";
-import { publishMavenCommand } from "./commands/publishMaven.js";
+import { parsePackageManagerArg } from "./packageManager.js";
 
 declare const __VERSION__: string;
 
@@ -26,15 +24,6 @@ function handleError(error: unknown, verbose: boolean): void {
     console.error("An unknown error occurred");
   }
   process.exit(1);
-}
-
-function getPackageManager(argv: ArgumentsCamelCase): PackageManagerIdentifier {
-  const packageManager =
-    `${argv.packageManager ?? defaultPackageManager()}`.toLowerCase();
-  if (["pnpm", "yarn", "npm"].includes(packageManager)) {
-    return packageManager as PackageManagerIdentifier;
-  }
-  throw new Error(`unknown package manager ${packageManager}`);
 }
 
 yargs(hideBin(process.argv))
@@ -84,7 +73,7 @@ yargs(hideBin(process.argv))
     },
     (argv) => {
       try {
-        verifyReleaseCommand(getPackageManager(argv));
+        verifyReleaseCommand(parsePackageManagerArg(argv));
       } catch (error) {
         handleError(error, argv.verbose);
       }
@@ -109,7 +98,7 @@ yargs(hideBin(process.argv))
     },
     (argv) => {
       try {
-        startHotfixCommand(getPackageManager(argv), argv.tag);
+        startHotfixCommand(parsePackageManagerArg(argv), argv.tag);
       } catch (error) {
         handleError(error, argv.verbose);
       }
@@ -128,7 +117,7 @@ yargs(hideBin(process.argv))
     },
     (argv) => {
       try {
-        releaseCommand(getPackageManager(argv));
+        releaseCommand(parsePackageManagerArg(argv));
       } catch (error) {
         handleError(error, argv.verbose);
       }
@@ -147,44 +136,7 @@ yargs(hideBin(process.argv))
     },
     async (argv) => {
       try {
-        await publishCommand(getPackageManager(argv));
-      } catch (error) {
-        handleError(error, argv.verbose);
-      }
-    },
-  )
-  .command(
-    "publishMaven",
-    "Publishes packed project to a maven repository",
-    (yargs) => {
-      return yargs
-        .option("package-manager", {
-          describe: "Package manager to use",
-          type: "string",
-          choices: ["yarn", "npm", "pnpm"],
-          demandOption: false,
-        })
-        .option("repository-id", {
-          describe:
-            "Maven repository-id. See https://maven.apache.org/plugins/maven-deploy-plugin/deploy-file-mojo.html#repositoryId for Details",
-          type: "string",
-          demandOption: true,
-        })
-        .option("repository-url", {
-          describe: "Url of the Maven repository to publish to",
-          type: "string",
-          demandOption: true,
-        });
-    },
-    async (argv) => {
-      try {
-        await publishMavenCommand(
-          {
-            id: argv.repositoryId,
-            url: argv.repositoryUrl,
-          },
-          getPackageManager(argv),
-        );
+        await publishCommand(parsePackageManagerArg(argv));
       } catch (error) {
         handleError(error, argv.verbose);
       }

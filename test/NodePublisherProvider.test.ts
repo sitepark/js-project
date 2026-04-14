@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { Project } from "../src/Project.js";
+import { BranchType } from "../src/BranchType.js";
 import { NodePublisherProvider } from "../src/NodePublisherProvider.js";
+import type { Project } from "../src/Project.js";
 
 describe("NodePublisherProvider", () => {
   describe("getNpmPublishVersion()", () => {
@@ -10,6 +11,7 @@ describe("NodePublisherProvider", () => {
         {
           getVersion: () => "1.0.0-SNAPSHOT",
           getBranch: () => "main",
+          getBranchType: () => BranchType.Main,
           isSnapshot: () => true,
           getBuildTime: () => buildTime,
         } as Project,
@@ -26,7 +28,8 @@ describe("NodePublisherProvider", () => {
         {
           getVersion: () => "1.0.0-SNAPSHOT",
           getBranch: () => "feature/mein_tolles_krasses_feature_123123",
-          getFeatureBranchVersionIdentifier: (_target: string) =>
+          getBranchType: () => BranchType.Feature,
+          getFeatureBranchVersionIdentifier: () =>
             "mein_tolles_krasses_feature_123123",
           isSnapshot: () => true,
           getBuildTime: () => buildTime,

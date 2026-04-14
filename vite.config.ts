@@ -1,7 +1,7 @@
-import { defineConfig } from "vitest/config";
-import { resolve } from "path";
-import { readFileSync } from "fs";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import dts from "vite-plugin-dts";
+import { defineConfig } from "vitest/config";
 
 const pkg = JSON.parse(readFileSync("./package.json", "utf8"));
 
@@ -13,6 +13,7 @@ export default defineConfig({
     dts({
       outDir: "dist/types",
       include: ["src/**/*"],
+      compilerOptions: { rootDir: "src" },
     }),
   ],
   build: {
