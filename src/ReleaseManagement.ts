@@ -106,6 +106,7 @@ export class ReleaseManagement {
     );
 
     this.project.updateVersion(releaseVersion);
+    this.project.refresh();
     this.buildProvider.formatPackageJson();
 
     this.logTask(`Building package`, () => {
@@ -127,6 +128,7 @@ export class ReleaseManagement {
 
     const nextSnapshotVersion = this.project.getNextSnapshotVersion();
     this.project.updateVersion(nextSnapshotVersion);
+    this.project.refresh();
 
     this.git.commit(
       "package.json",
