@@ -24,6 +24,7 @@ describe("ReleaseManagement", () => {
       getNextSnapshotVersion: vi.fn(),
       getVersionsFromMinor: vi.fn(),
       updateVersion: vi.fn(),
+      refresh: vi.fn(),
       hasUncommittedChanges: vi.fn(),
     } as unknown as Project;
 
