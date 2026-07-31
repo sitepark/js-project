@@ -49,7 +49,7 @@ export class Project {
   }
 
   private getCurrentBranch(): string {
-    // When running in a github action
+    // When running in a GitHub Actions pipeline
     if (
       process.env.GITHUB_REF_NAME &&
       process.env.GITHUB_REF_TYPE === "branch"
@@ -57,9 +57,14 @@ export class Project {
       return process.env.GITHUB_REF_NAME;
     }
 
-    // When running in a gitlab CI/CD pipeline
-    if (process.env.CI_COMMIT_BRANCH) {
-      return process.env.CI_COMMIT_BRANCH;
+    // When running in a GitLab CI/CD pipeline
+    // CI_COMMIT_BRANCH is not set in MR pipelines, use CI_MERGE_REQUEST_SOURCE_BRANCH_NAME instead
+    const gitlabBranch =
+      process.env.CI_COMMIT_BRANCH ||
+      process.env.CI_MERGE_REQUEST_SOURCE_BRANCH_NAME;
+
+    if (gitlabBranch) {
+      return gitlabBranch;
     }
 
     // When running locally
