@@ -1,6 +1,5 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import dts from "vite-plugin-dts";
 import { defineConfig } from "vitest/config";
 
 const pkg = JSON.parse(readFileSync("./package.json", "utf8"));
@@ -9,15 +8,9 @@ export default defineConfig({
   define: {
     __VERSION__: JSON.stringify(pkg.version),
   },
-  plugins: [
-    dts({
-      outDir: "dist/types",
-      include: ["src/**/*"],
-      compilerOptions: { rootDir: "src" },
-    }),
-  ],
   build: {
     ssr: true,
+    sourcemap: true,
     lib: {
       entry: {
         index: resolve(__dirname, "src/index.ts"),
