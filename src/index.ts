@@ -12,4 +12,5 @@ export {
 } from "./packageManager.js";
 export { ReleaseManagement } from "./ReleaseManagement.js";
 export { ReleaseManagementFactory } from "./ReleaseManagementFactory.js";
+export { BranchType } from "./BranchType.js";
 export * from "./version.js";
