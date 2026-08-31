@@ -11,8 +11,8 @@ updates:
     open-pull-requests-limit: 10
     versioning-strategy: "increase"
     commit-message:
-      # "scope" appends (deps) / (deps-dev) itself, so the prefix must be bare
-      prefix: "chore"
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
       include: "scope"
     groups:
       production-dependencies:
@@ -34,7 +34,7 @@ updates:
       time: "05:00"
       timezone: "Europe/Berlin"
     commit-message:
-      prefix: "ci"
+      prefix: "ci(deps)"
       include: "scope"
     groups:
       github-actions:
