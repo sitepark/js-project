@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { Git } from "./Git.js";
-import type { PackageJson } from "./PackageJson.js";
+import { type PackageJson, serializePackageJson } from "./PackageJson.js";
 import type { DependencySection } from "./Workspace.js";
 
 import { BranchType } from "./BranchType.js";
@@ -152,8 +152,7 @@ export class Project {
 
   public updateVersion(newVersion: string): void {
     this.pkg.version = newVersion;
-    const pkgContent = `${JSON.stringify(this.pkg, null, 2)}\n`;
-    writeFileSync(this.packagePath, pkgContent, "utf8");
+    writeFileSync(this.packagePath, serializePackageJson(this.pkg), "utf8");
   }
 
   public getBranch(): string {

@@ -4,6 +4,7 @@ import type { Git } from "./Git.js";
 import type { Project } from "./Project.js";
 import type { Publisher } from "./Publisher.js";
 import { VerificationReport } from "./VerificationReport.js";
+import { Workspace } from "./Workspace.js";
 import { incrementPatchVersion } from "./version.js";
 
 export class ReleaseManagement {
@@ -15,16 +16,27 @@ export class ReleaseManagement {
 
   private git: Git;
 
+  private workspace: Workspace | undefined;
+
+  /**
+   * @param workspace the workspace rooted at `project`. Versions are written
+   *   into and committed for every package of the workspace (fixed / lockstep
+   *   versioning). Without a workspace only the `package.json` of `project`
+   *   is written and committed. {@link ReleaseManagementFactory.forCwd}
+   *   always passes the workspace.
+   */
   constructor(
     project: Project,
     git: Git,
     buildProvider: BuildProvider,
     publisherProvider: Publisher,
+    workspace?: Workspace,
   ) {
     this.project = project;
     this.git = git;
     this.buildProvider = buildProvider;
     this.publisherProvider = publisherProvider;
+    this.workspace = workspace;
   }
 
   /**
@@ -64,14 +76,18 @@ export class ReleaseManagement {
 
     const hotfixBranch = `hotfix/${major}.${minor}.x`;
     this.git.createBranch(hotfixBranch, lastReleaseVersion);
-    // The checkout replaced package.json with the content of the base tag.
-    // Re-read it so the new version is written on top of that content.
+    // The checkout replaced the package.json files (and possibly the set of
+    // workspace packages) with the content of the base tag. Re-read them so
+    // the new version is written on top of that content.
     this.project.refresh();
-    this.project.updateVersion(hotfixSnapshotVersion);
+    if (this.workspace) {
+      this.workspace = Workspace.forProject(this.project);
+    }
+    const hotfixPaths = this.writeVersion(hotfixSnapshotVersion);
     this.buildProvider.formatPackageJson();
 
     this.git.commit(
-      "package.json",
+      hotfixPaths,
       "ci(release)",
       `Updating package.json set version to ${hotfixSnapshotVersion}`,
     );
@@ -108,7 +124,7 @@ export class ReleaseManagement {
       "The release can only be created when all changes are committed.",
     );
 
-    this.project.updateVersion(releaseVersion);
+    const releasePaths = this.writeVersion(releaseVersion);
     this.project.refresh();
     this.buildProvider.formatPackageJson();
 
@@ -119,7 +135,7 @@ export class ReleaseManagement {
     });
 
     this.git.commit(
-      "package.json",
+      releasePaths,
       "ci(release)",
       `Release ${releaseVersion}`,
       false,
@@ -130,11 +146,11 @@ export class ReleaseManagement {
     await this.publisherProvider.publish();
 
     const nextSnapshotVersion = this.project.getNextSnapshotVersion();
-    this.project.updateVersion(nextSnapshotVersion);
+    const snapshotPaths = this.writeVersion(nextSnapshotVersion);
     this.project.refresh();
 
     this.git.commit(
-      "package.json",
+      snapshotPaths,
       "ci(release)",
       `Updating package.json set version to ${nextSnapshotVersion}`,
       false,
@@ -156,6 +172,19 @@ export class ReleaseManagement {
         `${msg}\nUncommitted changes:\n${untractedFiles.join("\n")}`,
       );
     }
+  }
+
+  /**
+   * Writes `version` into the root and every workspace `package.json` and
+   * returns the paths to commit.
+   */
+  private writeVersion(version: string): string | string[] {
+    if (!this.workspace) {
+      this.project.updateVersion(version);
+      return "package.json";
+    }
+    this.workspace.writeVersion(version);
+    return this.workspace.getPackageJsonPaths();
   }
 
   public logTask(label: string, cb: () => void): void {

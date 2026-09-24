@@ -93,14 +93,22 @@ export class Git {
     });
   }
 
+  /**
+   * Stages the given path(s) and commits them.
+   *
+   * @param path a single path or a list of paths to stage
+   */
   public commit(
-    path: string,
+    path: string | readonly string[],
     type: string,
     message: string,
     skipCi: boolean = true,
   ): void {
     const msg = skipCi ? `${message} [skip ci]` : message;
-    execSync(`git add ${path} && git commit -m "${type}: ${msg}"`, {
+    const paths = (typeof path === "string" ? [path] : path)
+      .map(quoteShellArgument)
+      .join(" ");
+    execSync(`git add ${paths} && git commit -m "${type}: ${msg}"`, {
       stdio: "inherit",
     });
   }
@@ -132,4 +140,15 @@ export class Git {
       .split(/(?:\n|\r\n?)/)
       .map((line) => line.trim());
   }
+}
+
+/**
+ * Quotes a path for the shell unless it only consists of characters that are
+ * safe without quoting, so plain paths keep producing the same command.
+ */
+function quoteShellArgument(arg: string): string {
+  if (/^[\w@%+=:,./-]+$/.test(arg)) {
+    return arg;
+  }
+  return `'${arg.replaceAll("'", "'\\''")}'`;
 }

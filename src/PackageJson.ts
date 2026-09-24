@@ -9,3 +9,11 @@ import type { PackageJson as OriginalPackageJson } from "type-fest";
  * `JS_PROJECT_RELEASE_REGISTRY` environment variables.
  */
 export type PackageJson = OriginalPackageJson;
+
+/**
+ * Serialises a `package.json` the way js-project writes it: 2-space
+ * indentation and a trailing newline.
+ */
+export function serializePackageJson(pkg: PackageJson): string {
+  return `${JSON.stringify(pkg, null, 2)}\n`;
+}
