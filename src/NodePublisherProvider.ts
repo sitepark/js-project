@@ -99,7 +99,8 @@ export class NodePublisherProvider implements Publisher {
 
     const version = this.project.getVersion();
     const files = workspace.captureFiles();
-    let written = false;
+    // Set before writing: a write that fails halfway must be restored too.
+    let restoreNeeded = false;
 
     try {
       // In a workspace every package is synced to the publish version
@@ -107,7 +108,7 @@ export class NodePublisherProvider implements Publisher {
       // `workspace:` specifiers resolve to the version actually published.
       if (this.project.isSnapshot() || monorepo) {
         const publishVersion = this.getNpmPublishVersion();
-        written = true;
+        restoreNeeded = true;
         workspace.writeVersion(publishVersion);
         console.log(
           this.project.isSnapshot()
@@ -157,7 +158,7 @@ export class NodePublisherProvider implements Publisher {
         stdio: "inherit",
       });
     } finally {
-      if (written) {
+      if (restoreNeeded) {
         workspace.restoreFiles(files);
       }
     }
