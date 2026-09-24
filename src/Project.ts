@@ -125,6 +125,14 @@ export class Project {
     return path.join(this.getBasePath(), "build");
   }
 
+  /**
+   * Checks whether the package is marked as `"private": true`.
+   * Private packages are never published.
+   */
+  public isPrivate(): boolean {
+    return this.pkg.private === true;
+  }
+
   public getVersion(): string {
     return this.pkg.version || "1.0.0-SNAPSHOT";
   }

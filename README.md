@@ -219,6 +219,8 @@ js-project publish [--package-manager <yarn|npm|pnpm>]
 
 **Use case**: Typically called as part of the `release` command, but can be used independently to publish without version changes.
 
+**Private packages**: If the root `package.json` is marked `"private": true`, the package is not published. `publish` logs `Skipping publish of private package "<name>"` and succeeds, so a `release` on such a repository still commits, tags and pushes, and publishers queued after the Node publisher (e.g. in `js-ies-module`) still run.
+
 ---
 
 ## SNAPSHOT Versions

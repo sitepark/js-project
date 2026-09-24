@@ -35,6 +35,13 @@ export class NodePublisherProvider implements Publisher {
   }
 
   public async publish(): Promise<void> {
+    if (this.project.isPrivate()) {
+      console.log(
+        `Skipping publish of private package "${this.project.getName()}"`,
+      );
+      return;
+    }
+
     if (this.project.getBranchType() === BranchType.Unknown) {
       throw new Error(
         `Unable to publish on unknown branch type "${this.project.getBranch()}"`,
