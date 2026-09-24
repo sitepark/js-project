@@ -1,5 +1,5 @@
 import { BranchType } from "./BranchType.js";
-import type { BuildProvider } from "./BuildProvider.js";
+import { type BuildProvider, workspaceOptionsFor } from "./BuildProvider.js";
 import type { Git } from "./Git.js";
 import type { Project } from "./Project.js";
 import type { Publisher } from "./Publisher.js";
@@ -22,8 +22,10 @@ export class ReleaseManagement {
    * @param workspace the workspace rooted at `project`. Versions are written
    *   into and committed for every package of the workspace (fixed / lockstep
    *   versioning). Without a workspace only the `package.json` of `project`
-   *   is written and committed. {@link ReleaseManagementFactory.forCwd}
-   *   always passes the workspace.
+   *   is written and committed, as before monorepo support, so that the
+   *   public four-argument constructor keeps its behaviour.
+   *   {@link ReleaseManagementFactory.forCwd} always passes the workspace,
+   *   checked against the package manager of the build provider.
    */
   constructor(
     project: Project,
@@ -43,7 +45,7 @@ export class ReleaseManagement {
    * Generates a VerificationReport for this project
    */
   public verifyRelease(): VerificationReport {
-    return new VerificationReport(this.project);
+    return new VerificationReport(this.project, this.workspace);
   }
 
   public startHotfix(tag: string): string {
@@ -81,7 +83,10 @@ export class ReleaseManagement {
     // the new version is written on top of that content.
     this.project.refresh();
     if (this.workspace) {
-      this.workspace = Workspace.forProject(this.project);
+      this.workspace = Workspace.forProject(
+        this.project,
+        workspaceOptionsFor(this.buildProvider),
+      );
     }
     const hotfixPaths = this.writeVersion(hotfixSnapshotVersion);
     this.buildProvider.formatPackageJson();

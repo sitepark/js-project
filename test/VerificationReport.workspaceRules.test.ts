@@ -71,7 +71,8 @@ describe("VerificationReport workspace rules", () => {
         expect(report.isReleaseable()).toBe(false);
         expect(report.getPrivateSiblingDependencies()).toEqual([
           {
-            package: "@acme/lib",
+            packageName: "@acme/lib",
+            packagePath: "packages/lib/package.json",
             dependency: "@acme/utils",
             section,
             versionRange: "workspace:*",
@@ -158,7 +159,8 @@ describe("VerificationReport workspace rules", () => {
 
       expect(report.getPrivateSiblingDependencies()).toEqual([
         {
-          package: "root",
+          packageName: "root",
+          packagePath: "package.json",
           dependency: "@acme/utils",
           section: "dependencies",
           versionRange: "workspace:*",
@@ -188,8 +190,45 @@ describe("VerificationReport workspace rules", () => {
       expect(
         verifyReleaseForCwd()
           .getPrivateSiblingDependencies()
-          .map((d) => `${d.package} -> ${d.dependency}`),
+          .map((d) => `${d.packageName} -> ${d.dependency}`),
       ).toEqual(["@acme/lib -> @acme/utils", "@acme/lib -> @acme/fixtures"]);
+    });
+  });
+
+  describe("unnamed packages", () => {
+    it("should be named the same way in every section of the report", () => {
+      createFixture({
+        root: {
+          version: VERSION,
+          dependencies: { "@acme/utils": "workspace:*", ext: "1.0.0-SNAPSHOT" },
+        },
+        workspace: { packages: ["packages/**"] },
+        packages: {
+          "packages/utils": privateUtils,
+          "packages/nested/x": {
+            dependencies: { ext: "1.0.0-SNAPSHOT" },
+          },
+        },
+      });
+
+      const report = verifyReleaseForCwd();
+
+      expect(
+        report.getSnapshotDependencies().map((d) => d.packageName),
+      ).toEqual([".", "packages/nested/x"]);
+      expect(
+        report.getPrivateSiblingDependencies().map((d) => d.packageName),
+      ).toEqual(["."]);
+      expect(report.getVersionDrift().map((d) => d.packageName)).toEqual([
+        "packages/nested/x",
+      ]);
+      const message = report.toString();
+      expect(message).toContain(". (package.json):");
+      expect(message).toContain(
+        "packages/nested/x (packages/nested/x/package.json):",
+      );
+      expect(message).toContain("\t. -> @acme/utils");
+      expect(message).toContain("\tpackages/nested/x - (none)");
     });
   });
 
@@ -207,10 +246,21 @@ describe("VerificationReport workspace rules", () => {
       const report = verifyReleaseForCwd();
 
       expect(report.getVersionDrift()).toEqual([
-        { package: "@acme/a", version: "0.0.0", rootVersion: VERSION },
-        { package: "@acme/c", version: "0.0.0", rootVersion: VERSION },
         {
-          package: "packages/unnamed",
+          packageName: "@acme/a",
+          packagePath: "packages/a/package.json",
+          version: "0.0.0",
+          rootVersion: VERSION,
+        },
+        {
+          packageName: "@acme/c",
+          packagePath: "packages/c/package.json",
+          version: "0.0.0",
+          rootVersion: VERSION,
+        },
+        {
+          packageName: "packages/unnamed",
+          packagePath: "packages/unnamed/package.json",
           version: undefined,
           rootVersion: VERSION,
         },

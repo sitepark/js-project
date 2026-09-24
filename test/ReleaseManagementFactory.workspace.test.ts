@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BuildProvider } from "../src/BuildProvider.js";
+import { NodePublisherProvider } from "../src/NodePublisherProvider.js";
 import type { PackageJson } from "../src/PackageJson.js";
 import { Project } from "../src/Project.js";
 import type { Publisher } from "../src/Publisher.js";
@@ -294,6 +295,230 @@ describe("ReleaseManagementFactory in a pnpm workspace", () => {
         expect(fixture.readFile(file)).toMatch(/\}\n$/);
       }
     });
+  });
+});
+
+describe("ReleaseManagementFactory in a pnpm workspace with the real NodePublisherProvider", () => {
+  beforeEach(() => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "group").mockImplementation(() => {});
+    vi.spyOn(console, "groupEnd").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("should build, commit, tag, publish every public package once and continue with the next SNAPSHOT", async () => {
+    const fixture = createFixture(workspaceFixture("1.2.0-SNAPSHOT"));
+    const exec = recordExecSync({
+      branch: "main",
+      tags: ["1.1.0"],
+      env: { JS_PROJECT_RELEASE_REGISTRY: "https://registry.example" },
+    });
+    const versionsAt: Record<string, string[]> = {};
+    exec.respond(/^git add |^pnpm -r publish/, (command) => {
+      versionsAt[command] = versions(fixture);
+      return "";
+    });
+    const releaseFiles: string[] = [];
+    exec.respond(/^git tag -a/, () => {
+      releaseFiles.push(...ALL_PACKAGE_JSONS.map((f) => fixture.readFile(f)));
+      return "";
+    });
+    const filesAfterPublish: string[] = [];
+    const project = Project.forCwd();
+    const publisher = new NodePublisherProvider(project, "pnpm");
+    const publish = publisher.publish.bind(publisher);
+    vi.spyOn(publisher, "publish").mockImplementation(async () => {
+      await publish();
+      filesAfterPublish.push(
+        ...ALL_PACKAGE_JSONS.map((f) => fixture.readFile(f)),
+      );
+    });
+
+    const version = await ReleaseManagementFactory.forCwd(
+      project,
+      new BuildProvider(project, "pnpm"),
+      publisher,
+    ).release();
+
+    const staged = ALL_PACKAGE_JSONS.join(" ");
+    const releaseCommit = `git add ${staged} && git commit -m "ci(release): Release 1.2.0"`;
+    const publishCommand =
+      "pnpm -r publish --ignore-scripts --no-git-checks --registry https://registry.example --tag latest";
+    const snapshotCommit = `git add ${staged} && git commit -m "ci(release): Updating package.json set version to 1.3.0-SNAPSHOT"`;
+    expect(version).toBe("1.2.0");
+    expect(
+      exec.commandsMatching(/^pnpm |^git (add|tag -a|push)|publish/),
+    ).toEqual([
+      "pnpm run format:package-json",
+      "pnpm run test",
+      "pnpm run build",
+      releaseCommit,
+      'git tag -a 1.2.0 -m "Release Version 1.2.0"',
+      publishCommand,
+      snapshotCommit,
+      "git push -u origin main",
+      "git push --tags",
+    ]);
+    expect(versionsAt).toEqual({
+      [releaseCommit]: ["1.2.0", "1.2.0", "1.2.0", "1.2.0"],
+      [publishCommand]: ["1.2.0", "1.2.0", "1.2.0", "1.2.0"],
+      [snapshotCommit]: Array(4).fill("1.3.0-SNAPSHOT"),
+    });
+    // publish() restores the committed release files byte for byte
+    expect(filesAfterPublish).toEqual(releaseFiles);
+    expect(fixture.readJson("packages/c").dependencies).toEqual({
+      "@scope/a": "workspace:*",
+    });
+    expect(versions(fixture)).toEqual(Array(4).fill("1.3.0-SNAPSHOT"));
+  });
+});
+
+describe("ReleaseManagementFactory in a workspace with npm or yarn", () => {
+  beforeEach(() => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "group").mockImplementation(() => {});
+    vi.spyOn(console, "groupEnd").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const PNPM_REQUIRED = "Monorepo mode currently requires pnpm";
+
+  function contents(fixture: Fixture): string[] {
+    return ALL_PACKAGE_JSONS.map((file) => fixture.readFile(file));
+  }
+
+  /** everything that writes, builds, commits, tags, pushes or publishes */
+  const SIDE_EFFECTS =
+    /^(npm|yarn|pnpm) |^git (checkout|add|commit|tag -a|push)/;
+
+  it.each(["npm", "yarn"] as const)(
+    "should refuse to create the release management with %s before anything is written, committed or tagged",
+    (packageManager) => {
+      const fixture = createFixture(workspaceFixture("1.2.0-SNAPSHOT"));
+      const exec = recordExecSync({ branch: "main", tags: ["1.1.0"] });
+      const before = contents(fixture);
+      const project = Project.forCwd();
+
+      expect(() =>
+        ReleaseManagementFactory.forCwd(
+          project,
+          new BuildProvider(project, packageManager),
+          new NodePublisherProvider(project, packageManager),
+        ),
+      ).toThrow(PNPM_REQUIRED);
+
+      expect(exec.commandsMatching(SIDE_EFFECTS)).toEqual([]);
+      expect(contents(fixture)).toEqual(before);
+    },
+  );
+
+  it("should refuse a js-ies-module style release (npm, no NodePublisherProvider)", () => {
+    const fixture = createFixture(workspaceFixture("1.2.0-SNAPSHOT"));
+    const exec = recordExecSync({ branch: "main", tags: ["1.1.0"] });
+    const before = contents(fixture);
+    const publish = vi.fn(async () => {});
+    const project = Project.forCwd();
+
+    expect(() =>
+      ReleaseManagementFactory.forCwd(
+        project,
+        new BuildProvider(project, "npm"),
+        { publish, cleanup: async () => {} },
+      ),
+    ).toThrow(PNPM_REQUIRED);
+
+    expect(publish).not.toHaveBeenCalled();
+    expect(exec.commandsMatching(SIDE_EFFECTS)).toEqual([]);
+    expect(contents(fixture)).toEqual(before);
+  });
+
+  it("should refuse verifyRelease() through the factory with npm", () => {
+    createFixture(workspaceFixture("1.2.0-SNAPSHOT"));
+    recordExecSync({ branch: "main" });
+    const project = Project.forCwd();
+
+    expect(() =>
+      ReleaseManagementFactory.forCwd(
+        project,
+        new BuildProvider(project, "npm"),
+        noopPublisher(),
+      ).verifyRelease(),
+    ).toThrow(PNPM_REQUIRED);
+  });
+
+  it("should refuse a workspace declared by the package.json workspaces field", () => {
+    const fixture = createFixture({
+      root: {
+        name: "root",
+        version: "1.2.0-SNAPSHOT",
+        private: true,
+        workspaces: ["packages/*"],
+      },
+      packages: { "packages/a": { name: "a", version: "1.2.0-SNAPSHOT" } },
+    });
+    const exec = recordExecSync({ branch: "main", tags: ["1.1.0"] });
+    const before = fixture.readFile("package.json");
+
+    expect(() => releaseManagementForCwd()).toThrow(
+      'the workspace is declared by the "workspaces" field',
+    );
+
+    expect(exec.commandsMatching(SIDE_EFFECTS)).toEqual([]);
+    expect(fixture.readFile("package.json")).toBe(before);
+  });
+
+  it("should refuse startHotfix() when the base tag is a workspace, before anything is committed", () => {
+    const fixture = createFixture({
+      root: { name: "root", version: "1.2.0", private: true, scripts },
+    });
+    const exec = recordExecSync({ branch: "main", tags: ["1.2.0", "1.2.1"] });
+    // 1.2.1 introduced the workspace
+    exec.respond(/^git checkout -B /, () => {
+      writeFileSync(fixture.path("pnpm-workspace.yaml"), "packages:\n  - a\n");
+      writePackageJson(fixture, "a", { name: "a", version: "1.2.1" });
+      return "";
+    });
+    const project = Project.forCwd();
+    const releaseManagement = ReleaseManagementFactory.forCwd(
+      project,
+      new BuildProvider(project, "yarn"),
+      noopPublisher(),
+    );
+
+    expect(() => releaseManagement.startHotfix("1.2")).toThrow(PNPM_REQUIRED);
+
+    expect(exec.commandsMatching(SIDE_EFFECTS)).toEqual([
+      "git checkout -B hotfix/1.2.x 1.2.1",
+    ]);
+    expect(fixture.readJson("a").version).toBe("1.2.1");
+  });
+
+  it("should keep releasing a single-package repo with npm", async () => {
+    const fixture = createFixture({
+      root: { name: "single", version: "1.2.0-SNAPSHOT", scripts },
+    });
+    const exec = recordExecSync({ branch: "main", tags: ["1.1.0"] });
+    const project = Project.forCwd();
+
+    await ReleaseManagementFactory.forCwd(
+      project,
+      new BuildProvider(project, "npm"),
+      new NodePublisherProvider(project, "npm"),
+    ).release();
+
+    expect(exec.commandsMatching(/^npm /)).toEqual([
+      "npm run format:package-json",
+      "npm run test",
+      "npm run build",
+      "npm publish --ignore-scripts --non-interactive --tag latest",
+    ]);
+    expect(fixture.readJson().version).toBe("1.3.0-SNAPSHOT");
   });
 });
 

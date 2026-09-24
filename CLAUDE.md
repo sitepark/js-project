@@ -71,7 +71,7 @@ The architecture follows a clean separation of concerns with provider pattern fo
 
 **Core Domain Classes:**
 
-- `Project` - Represents a Node.js project, manages package.json, version queries, and dependency analysis
+- `Project` - Represents a Node.js project, manages package.json and version queries
 - `Git` - Git operations wrapper (branches, tags, commits, version queries)
 - `ReleaseManagement` - Orchestrates the release workflow (release creation, hotfix management, verification)
 - `Workspace` - The set of packages rooted at a root `Project` (see Monorepo Mode below). A single-package repo is a workspace containing only the root, so callers don't branch
@@ -83,7 +83,7 @@ The architecture follows a clean separation of concerns with provider pattern fo
 
 **Supporting Classes:**
 
-- `VerificationReport` - Analyzes project for release readiness. Failing checks feed `hasFailures()`; each check lives in its own section of the class:
+- `VerificationReport` - Analyzes project for release readiness. Packages are named by `WorkspacePackage.getDisplayName()` (name, or the `/`-separated directory, `.` for the root) in every section. Failing checks feed `hasFailures()`; each check lives in its own section of the class:
   - external SNAPSHOT dependencies in all four dependency sections of the root and every workspace package (`workspace:` specifiers ignored, `catalog:` specifiers resolved via `Workspace.resolveCatalogSpecifier()`)
   - in a monorepo: public packages with a private sibling in `dependencies`/`peerDependencies`
   - version drift from the root, reported as information only
@@ -128,17 +128,20 @@ Hotfix workflow:
 1. Validate current state (must be SNAPSHOT on allowed branch)
 2. Convert version to release version (root and every workspace package)
 3. Format package.json (root `format:package-json`, once)
-4. Run build pipeline: test → verify → build → publish
+4. Run build pipeline: test → verify → build
 5. Commit release version (all touched package.json files) and create Git tag
-6. Update to next SNAPSHOT version (root and every workspace package)
-7. Commit SNAPSHOT version (all touched package.json files)
+6. Publish (`Publisher.publish()`)
+7. Update to next SNAPSHOT version (root and every workspace package)
+8. Commit SNAPSHOT version (all touched package.json files)
+9. Push the branch and the tags
 
 **Publishing Logic (`PublisherProvider.publish()`):**
 
 - For SNAPSHOT: appends timestamp to version
 - Determines npm dist-tag: `latest` for releases, `next` for newer SNAPSHOTs
+- Flags: `--ignore-scripts --no-git-checks` for pnpm, `--ignore-scripts --non-interactive` for npm/yarn, plus `[--registry <url>] --tag <tag>`
 - Single-package repo: `<pm> publish`; skips a private root package (`"private": true`) with a log message instead of publishing it. Never uses `-r` (without a workspace, pnpm would treat every nested `package.json` as a package)
-- pnpm workspace: `Workspace.captureFiles()` → `Workspace.writeVersion(publishVersion)` (root and every package, also for releases) → one `pnpm -r publish` → `Workspace.restoreFiles()` in `finally` (byte-identical). pnpm's recursive publish includes a non-private root and skips private packages, so the root is never published separately. Nothing runs when every package is private
+- pnpm workspace: `Workspace.captureFiles()` → `Workspace.writeVersion(publishVersion)` (root and every package, also for releases) → one `pnpm -r publish` → `Workspace.restoreFiles()` in `finally` (byte-identical). pnpm's recursive publish includes a non-private root and skips private packages, so the root is never published separately. A private root is logged as not published while the workspace packages are. Nothing runs when every package is private
 - Registries are configured exclusively via the `JS_PROJECT_SNAPSHOT_REGISTRY` / `JS_PROJECT_RELEASE_REGISTRY` environment variables (no `publishConfig` registry support)
 
 ### Monorepo Mode
@@ -152,7 +155,7 @@ Hotfix workflow:
 - **Publishing**: `captureFiles()` / `restoreFiles()` save and write back the raw bytes of every `package.json` in `getPackageJsonPaths()` (used by `NodePublisherProvider.publish()` around the publish version) and re-sync the root `Project` and the cached package versions.
 - All CLI commands obtain the root `Project` via `Workspace.forCwd({ packageManager })`. `Project` stays a single-package abstraction; `Project.forCwd()` keeps returning the root package.
 - **Fixed (lockstep) versioning**: one version for the whole workspace, the root `package.json` is the single source of truth, one bare `X.Y.Z` tag, one `hotfix/X.Y.x` line. `Workspace.writeVersion(version)` writes the root (through `Project.updateVersion`) and every workspace package, private or not, so drift heals itself; `Workspace.getPackageJsonPaths()` lists the touched files (root first, relative to the root) for `git add`.
-- `ReleaseManagement` takes the `Workspace` as optional 5th constructor argument (`ReleaseManagementFactory.forCwd` keeps its signature and builds it via `Workspace.forProject(project)`). `release()` / `startHotfix()` write versions through it and commit all touched `package.json` files (`Git.commit` accepts `string | string[]`). `startHotfix()` rebuilds the workspace after checking out the base tag, because the package set may differ there. Without a workspace only the root `package.json` is written and committed (used by the mock-based unit tests).
+- `ReleaseManagement` takes the `Workspace` as optional 5th constructor argument (`ReleaseManagementFactory.forCwd` keeps its signature and builds it via `Workspace.forProject(project, { packageManager })` with the package manager of the `BuildProvider` (`BuildProvider.getPackageManager()`), so a workspace with npm/yarn fails when the release management is created, before anything is written, committed or tagged). `release()` / `startHotfix()` write versions through it and commit all touched `package.json` files (`Git.commit` accepts `string | string[]`). `startHotfix()` rebuilds the workspace (with the same package manager check) after checking out the base tag, because the package set may differ there. Without a workspace only the root `package.json` is written and committed, so the public four-argument constructor keeps its pre-monorepo behaviour (also used by the mock-based unit tests).
 - `format:package-json` runs exactly once, at the root, after the versions are written; formatting the workspace `package.json` files is the responsibility of that root script.
 - Every `package.json` written by js-project uses `serializePackageJson()` (`src/PackageJson.ts`): 2-space JSON plus a trailing newline.
 
@@ -180,14 +183,25 @@ Hotfix workflow:
 
 ### Test Coverage
 
-Current test files in `test/`:
+Current test files in `test/` (Vitest counts each `it.each` case):
 
-- `version.test.ts` (19 tests) - Tests for version utility functions (semver operations, SNAPSHOT handling) - 100% coverage
-- `VerificationReport.test.ts` (14 tests) - Tests for release verification logic - 100% coverage
-- `Project.test.ts` (28 tests) - Tests for project management (version handling, branch detection, dependency analysis) - 75.6% coverage
-- `ReleaseManagement.test.ts` (26 tests) - Tests for release orchestration (release process, hotfix creation, verification) - 100% coverage
+- `version.test.ts` (19 tests) - version utility functions (semver operations, SNAPSHOT handling)
+- `Git.test.ts` (2 tests) - `Git.commit()` with one or several paths
+- `Project.test.ts` (34 tests) - project management (version handling, branch detection, scripts, registries)
+- `ProjectCleaner.test.ts` (3 tests) - cleaning the build directory
+- `Workspace.test.ts` (37 tests) - workspace detection, package discovery, guards, catalogs, version writing
+- `Workspace.writeVersion.test.ts` (7 tests) - writing versions into every `package.json` and restoring them
+- `VerificationReport.test.ts` (27 tests) - SNAPSHOT dependency check in single-package repos and workspaces
+- `VerificationReport.workspaceRules.test.ts` (15 tests) - private-sibling rule, version drift, naming of unnamed packages
+- `ReleaseManagement.test.ts` (28 tests) - release orchestration with hand-built mocks (release process, hotfix creation, verification)
+- `ReleaseManagementFactory.release.test.ts` (1 test) - release of a single package with a private root
+- `ReleaseManagementFactory.workspace.test.ts` (18 tests) - release/startHotfix in a pnpm workspace (also end to end with the real `NodePublisherProvider`), npm/yarn guard of the library path
+- `NodePublisherProvider.test.ts` (2 tests) - publish version computation
+- `NodePublisherProvider.publish.test.ts` (16 tests) - publish commands, private packages, restoring `package.json` files
+- `commands/release.test.ts` (2 tests) - release command wiring
+- `commands/workspaceGuards.test.ts` (15 tests) - run-from-root and npm/yarn guards of every CLI command
 
-Total: 87 tests
+Total: 226 tests
 
 ### Writing Tests
 

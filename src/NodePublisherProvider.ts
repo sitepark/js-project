@@ -57,13 +57,11 @@ export class NodePublisherProvider implements Publisher {
     });
     const monorepo = workspace.isMonorepo();
 
-    if (this.project.isPrivate()) {
+    if (!monorepo && this.project.isPrivate()) {
       console.log(
         `Skipping publish of private package "${this.project.getName()}"`,
       );
-      if (!monorepo) {
-        return;
-      }
+      return;
     }
 
     if (monorepo && workspace.getPackages().every((pkg) => pkg.isPrivate())) {
@@ -71,6 +69,13 @@ export class NodePublisherProvider implements Publisher {
         "Skipping publish: all packages of the workspace are private",
       );
       return;
+    }
+
+    if (monorepo && this.project.isPrivate()) {
+      console.log(
+        `The workspace root "${this.project.getName()}" is private and not published; ` +
+          "publishing the public workspace packages",
+      );
     }
 
     if (this.project.getBranchType() === BranchType.Unknown) {
@@ -94,7 +99,8 @@ export class NodePublisherProvider implements Publisher {
 
     const version = this.project.getVersion();
     const files = workspace.captureFiles();
-    let written = false;
+    // Set before writing: a write that fails halfway must be restored too.
+    let restoreNeeded = false;
 
     try {
       // In a workspace every package is synced to the publish version
@@ -102,7 +108,7 @@ export class NodePublisherProvider implements Publisher {
       // `workspace:` specifiers resolve to the version actually published.
       if (this.project.isSnapshot() || monorepo) {
         const publishVersion = this.getNpmPublishVersion();
-        written = true;
+        restoreNeeded = true;
         workspace.writeVersion(publishVersion);
         console.log(
           this.project.isSnapshot()
@@ -152,7 +158,7 @@ export class NodePublisherProvider implements Publisher {
         stdio: "inherit",
       });
     } finally {
-      if (written) {
+      if (restoreNeeded) {
         workspace.restoreFiles(files);
       }
     }

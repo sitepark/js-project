@@ -136,6 +136,30 @@ describe("Workspace", () => {
       expect(b?.isPrivate()).toBe(true);
     });
 
+    it("should name packages by their relative directory if they have no name", () => {
+      createFixture({
+        root: { version: "1.2.0-SNAPSHOT" },
+        workspace: { packages: ["packages/**"] },
+        packages: {
+          "packages/a": { name: "@scope/a" },
+          "packages/nested/b": {},
+        },
+      });
+
+      const packages = Workspace.forCwd().getPackages();
+
+      expect(packages.map((pkg) => pkg.getDisplayName())).toEqual([
+        ".",
+        "@scope/a",
+        "packages/nested/b",
+      ]);
+      expect(packages.map((pkg) => pkg.getRelativePackagePath())).toEqual([
+        "package.json",
+        "packages/a/package.json",
+        "packages/nested/b/package.json",
+      ]);
+    });
+
     it("should use the given root project as root", () => {
       createFixture({ root, workspace: { packages: ["packages/*"] } });
       const project = Project.forCwd();

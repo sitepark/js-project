@@ -2,7 +2,6 @@ import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { Git } from "./Git.js";
 import { type PackageJson, serializePackageJson } from "./PackageJson.js";
-import type { DependencySection } from "./Workspace.js";
 
 import { BranchType } from "./BranchType.js";
 import {
@@ -205,34 +204,6 @@ export class Project {
       return `${incrementPatchVersion(nextReleaseVersion)}-SNAPSHOT`;
     }
     return `${incrementMinorVersion(nextReleaseVersion)}-SNAPSHOT`;
-  }
-
-  /**
-   * Returns a list of dependencies that have a
-   * SNAPSHOT version.
-   *
-   * @param type Valid dependency types are "dependencies",
-   * devDependencies", "optionalDependencies", "peerDependencies"
-   * @returns
-   */
-  public getSnapshotDependencies(
-    type: DependencySection = "dependencies",
-  ): DependencyInfo[] {
-    const snapshots: DependencyInfo[] = [];
-    if (!Object.hasOwn(this.pkg, type)) {
-      return [];
-    }
-
-    const dependencies = this.pkg[type] || {};
-    Object.entries(dependencies).forEach(([name, versionRange]) => {
-      if (versionRange && versionRange.indexOf("-SNAPSHOT") > -1) {
-        snapshots.push({
-          name: name,
-          versionRange: versionRange,
-        });
-      }
-    });
-    return snapshots;
   }
 
   public getVersionsFromMajor(major: number): string[] {

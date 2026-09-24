@@ -10,6 +10,13 @@ import type { PackageJson as OriginalPackageJson } from "type-fest";
  */
 export type PackageJson = OriginalPackageJson;
 
+/** The dependency sections of a `package.json`. */
+export type DependencySection =
+  | "dependencies"
+  | "devDependencies"
+  | "optionalDependencies"
+  | "peerDependencies";
+
 /**
  * Serialises a `package.json` the way js-project writes it: 2-space
  * indentation and a trailing newline.
