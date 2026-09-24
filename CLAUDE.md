@@ -71,7 +71,7 @@ The architecture follows a clean separation of concerns with provider pattern fo
 
 **Core Domain Classes:**
 
-- `Project` - Represents a Node.js project, manages package.json and version queries
+- `Project` - Represents a Node.js project, manages package.json and version queries (`getSnapshotDependencies()` is deprecated in favour of `VerificationReport`)
 - `Git` - Git operations wrapper (branches, tags, commits, version queries)
 - `ReleaseManagement` - Orchestrates the release workflow (release creation, hotfix management, verification)
 - `Workspace` - The set of packages rooted at a root `Project` (see Monorepo Mode below). A single-package repo is a workspace containing only the root, so callers don't branch
@@ -187,7 +187,7 @@ Current test files in `test/` (Vitest counts each `it.each` case):
 
 - `version.test.ts` (19 tests) - version utility functions (semver operations, SNAPSHOT handling)
 - `Git.test.ts` (2 tests) - `Git.commit()` with one or several paths
-- `Project.test.ts` (34 tests) - project management (version handling, branch detection, scripts, registries)
+- `Project.test.ts` (38 tests) - project management (version handling, branch detection, scripts, registries, deprecated `getSnapshotDependencies()`)
 - `ProjectCleaner.test.ts` (3 tests) - cleaning the build directory
 - `Workspace.test.ts` (37 tests) - workspace detection, package discovery, guards, catalogs, version writing
 - `Workspace.writeVersion.test.ts` (7 tests) - writing versions into every `package.json` and restoring them
@@ -201,7 +201,7 @@ Current test files in `test/` (Vitest counts each `it.each` case):
 - `commands/release.test.ts` (2 tests) - release command wiring
 - `commands/workspaceGuards.test.ts` (15 tests) - run-from-root and npm/yarn guards of every CLI command
 
-Total: 226 tests
+Total: 230 tests
 
 ### Writing Tests
 
