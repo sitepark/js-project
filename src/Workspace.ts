@@ -99,6 +99,7 @@ export class Workspace {
   private readonly root: Project;
   private readonly definition: WorkspaceDefinition | undefined;
   private readonly packages: readonly WorkspacePackage[];
+  private catalogs: Catalogs | undefined;
 
   /**
    * Creates the workspace for the current working directory, which must be
@@ -154,7 +155,48 @@ export class Workspace {
   public getPackages(): readonly WorkspacePackage[] {
     return this.packages;
   }
+
+  /**
+   * The pnpm catalogs declared in the root `pnpm-workspace.yaml`, keyed by
+   * catalog name. The default catalog (`catalog:` or `catalogs.default`) is
+   * available under `"default"`. Catalogs are read from any
+   * `pnpm-workspace.yaml`, including a settings-only one. Empty if there is
+   * none.
+   *
+   * @throws if the catalogs are malformed or both `catalog` and
+   * `catalogs.default` are declared (as pnpm does)
+   */
+  public getCatalogs(): Catalogs {
+    this.catalogs ??= readCatalogs(this.root.getBasePath());
+    return this.catalogs;
+  }
+
+  /**
+   * Resolves a `catalog:` (default catalog) or `catalog:<name>` specifier of
+   * the dependency `dependencyName` to the specifier held by the catalog, the
+   * way pnpm does. Other specifiers are returned unchanged.
+   *
+   * @returns the resolved specifier, or `undefined` if the catalog or its
+   * entry for the dependency does not exist
+   */
+  public resolveCatalogSpecifier(
+    dependencyName: string,
+    specifier: string,
+  ): string | undefined {
+    if (!specifier.startsWith(CATALOG_PROTOCOL)) {
+      return specifier;
+    }
+    const name = specifier.slice(CATALOG_PROTOCOL.length).trim() || "default";
+    return this.getCatalogs()[name]?.[dependencyName];
+  }
 }
+
+/** pnpm catalogs keyed by catalog name, the default catalog as `"default"` */
+export type Catalogs = Readonly<
+  Record<string, Readonly<Record<string, string>>>
+>;
+
+const CATALOG_PROTOCOL = "catalog:";
 
 // ---------------------------------------------------------------------------
 // Detection
@@ -298,6 +340,64 @@ function discoverPackages(
     }
     return new WorkspacePackage(manifestPath, readJson(manifestPath), false);
   });
+}
+
+// ---------------------------------------------------------------------------
+// Catalogs
+// ---------------------------------------------------------------------------
+
+/**
+ * Reads the catalogs of `pnpm-workspace.yaml` in `dir` like pnpm does:
+ * `{ default: catalog, ...catalogs }`, rejecting a default catalog that is
+ * declared twice.
+ */
+function readCatalogs(dir: string): Catalogs {
+  const file = path.join(dir, PNPM_WORKSPACE_FILE);
+  if (!existsSync(file)) {
+    return {};
+  }
+  const manifest = readYaml(file);
+  if (!isRecord(manifest)) {
+    return {};
+  }
+  const catalogs: Record<string, Record<string, string>> = {};
+  if (manifest.catalogs !== undefined && manifest.catalogs !== null) {
+    if (!isRecord(manifest.catalogs)) {
+      throw new Error(`"catalogs" in "${file}" must be a map of catalogs`);
+    }
+    for (const [name, catalog] of Object.entries(manifest.catalogs)) {
+      catalogs[name] = toCatalog(catalog, file, `catalogs.${name}`);
+    }
+  }
+  if (manifest.catalog !== undefined && manifest.catalog !== null) {
+    if (catalogs.default !== undefined) {
+      throw new Error(
+        `"${file}" declares the default catalog twice: ` +
+          'use either "catalog" or "catalogs.default"',
+      );
+    }
+    catalogs.default = toCatalog(manifest.catalog, file, "catalog");
+  }
+  return catalogs;
+}
+
+function toCatalog(
+  value: unknown,
+  file: string,
+  key: string,
+): Record<string, string> {
+  if (value === null || value === undefined) {
+    return {};
+  }
+  if (
+    isRecord(value) &&
+    Object.values(value).every((specifier) => typeof specifier === "string")
+  ) {
+    return value as Record<string, string>;
+  }
+  throw new Error(
+    `"${key}" in "${file}" must map dependency names to version specifiers`,
+  );
 }
 
 // ---------------------------------------------------------------------------

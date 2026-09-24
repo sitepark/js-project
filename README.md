@@ -73,10 +73,16 @@ js-project releaseVersion
 
 Verifies that the project is ready for a release by checking:
 
-- No SNAPSHOT dependencies in `dependencies`, `devDependencies`, or `peerDependencies`
-- In a monorepo: no public package depends on a private workspace package at runtime (see [Monorepos](#monorepos-pnpm-workspaces))
+- No external SNAPSHOT dependencies in `dependencies`, `devDependencies`, `peerDependencies` or `optionalDependencies`
 
-In a monorepo it also reports, as information only, workspace packages whose version differs from the root version.
+The SNAPSHOT check covers the root package and, in a [monorepo](#monorepos-pnpm-workspaces), every workspace package. A dependency is a SNAPSHOT dependency if its version specifier contains `-SNAPSHOT`:
+
+- `workspace:` specifiers (`workspace:*`, `workspace:^`, `workspace:~`, ...) are ignored, because workspace siblings share the version of the root.
+- `catalog:` (default catalog) and `catalog:<name>` (named catalog) specifiers are resolved against the `catalog` / `catalogs` of `pnpm-workspace.yaml` first, so a SNAPSHOT pinned in a catalog is reported. A catalog reference without a matching catalog entry is not reported (pnpm refuses to install it anyway).
+
+Any SNAPSHOT dependency makes the verification fail.
+
+In a monorepo it also checks that no public package depends on a private workspace package at runtime, and reports, as information only, workspace packages whose version differs from the root version (see [Monorepos](#monorepos-pnpm-workspaces)).
 
 Registries are not part of the verification; they are configured exclusively via environment variables (see [Registry Configuration](#registry-configuration)).
 
@@ -97,6 +103,18 @@ Snapshot-Version detected:
 dependencies:
   @sitepark/some-package - ^1.0.0-SNAPSHOT
 
+```
+
+In a monorepo the findings are grouped by the offending package; catalog entries show the resolved specifier followed by the declared one:
+
+```
+Snapshot-Version detected:
+
+@sitepark/a (packages/a/package.json):
+  dependencies:
+    @sitepark/some-package - ^1.0.0-SNAPSHOT
+  peerDependencies:
+    @sitepark/other - ^2.0.0-SNAPSHOT (catalog:)
 ```
 
 **Use case**: Run in CI/CD pipelines before attempting a release to catch configuration issues early.
@@ -246,6 +264,7 @@ The workspace packages are the directories matched by the `packages:` globs, res
 
 **Verification rules** (`verifyRelease`):
 
+- **No external SNAPSHOT dependencies (failure)**: the root and every workspace package are checked, resolving `catalog:` specifiers and ignoring `workspace:` specifiers (see [verifyRelease](#verifyrelease)).
 - **Public packages must not depend on private siblings (failure)**: a non-private workspace package (or a non-private root) that lists a private workspace package in `dependencies` or `peerDependencies` fails the verification. Published, it would point at a version that doesn't exist on any registry, so consumers couldn't install it. The report names both packages, e.g. `@acme/lib -> @acme/utils (dependencies: workspace:*)`. Private siblings in `devDependencies` are allowed (e.g. shared private test utilities), and private packages may depend on private siblings.
 - **Version drift (information)**: workspace packages whose version differs from the root version are listed as information. This does not fail the verification, because `release`, `startHotfix` and `publish` always write the root version into every package, so the drift heals itself (e.g. the first release of a repository whose packages still sit at `0.0.0`). `verifyRelease` prints the list and exits with `0` if there are no failures.
 

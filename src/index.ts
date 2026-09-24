@@ -19,7 +19,13 @@ export type {
   VersionDrift,
 } from "./VerificationReport.js";
 export {
+  VerificationReport,
+  type DependencyReport,
+  type SnapshotDependency,
+} from "./VerificationReport.js";
+export {
   Workspace,
+  type Catalogs,
   type DependencySection,
   type WorkspaceOptions,
   type WorkspacePackage,

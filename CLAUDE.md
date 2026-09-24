@@ -83,7 +83,10 @@ The architecture follows a clean separation of concerns with provider pattern fo
 
 **Supporting Classes:**
 
-- `VerificationReport` - Analyzes project for release readiness (checks for SNAPSHOT dependencies; in a monorepo fails on public packages with a private sibling in `dependencies`/`peerDependencies` and reports version drift from the root as information only)
+- `VerificationReport` - Analyzes project for release readiness. Failing checks feed `hasFailures()`; each check lives in its own section of the class:
+  - external SNAPSHOT dependencies in all four dependency sections of the root and every workspace package (`workspace:` specifiers ignored, `catalog:` specifiers resolved via `Workspace.resolveCatalogSpecifier()`)
+  - in a monorepo: public packages with a private sibling in `dependencies`/`peerDependencies`
+  - version drift from the root, reported as information only
 - `ReleaseManagementFactory` - Factory for creating ReleaseManagement instances with providers
 - `PackageJson` - TypeScript interface for package.json structure
 
@@ -144,6 +147,7 @@ Hotfix workflow:
 - **Detection**: monorepo mode when the root has a `pnpm-workspace.yaml` with a `packages:` key, or a root `package.json` with a `workspaces` field. A settings-only `pnpm-workspace.yaml` is not a workspace.
 - **Discovery**: `packages:` globs are resolved like pnpm does (tinyglobby, `<glob>/package.json`, negations apply globally, `node_modules`/`bower_components` ignored, no implicit dot directories, symlinks not followed as in pnpm 12). The root is always the first package. Workspace packages must have a `package.json` (`package.yaml`/`package.json5` are rejected).
 - **Guards**: `Workspace.forCwd()` / `Workspace.forProject()` fail when the directory is inside a workspace but not its root (search stops at the git repository root), and, when a `packageManager` option is given, when a detected workspace is used with npm or yarn ("monorepo mode currently requires pnpm") or declared only by the `workspaces` field.
+- **Catalogs**: `getCatalogs()` / `resolveCatalogSpecifier()` read `catalog` / `catalogs` of any root `pnpm-workspace.yaml` (also settings-only), default catalog under `"default"`, like pnpm.
 - All CLI commands obtain the root `Project` via `Workspace.forCwd({ packageManager })`. `Project` stays a single-package abstraction; `Project.forCwd()` keeps returning the root package.
 
 ### Environment Variables

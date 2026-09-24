@@ -338,4 +338,107 @@ describe("Workspace", () => {
       expect(Workspace.forCwd().getRoot().getName()).toBe("lib");
     });
   });
+
+  describe("catalogs", () => {
+    it("should expose the default and named catalogs", () => {
+      createFixture({
+        root,
+        workspace: {
+          packages: ["packages/*"],
+          catalog: { react: "^18.2.0" },
+          catalogs: { legacy: { react: "^17.0.0" } },
+        },
+      });
+
+      expect(Workspace.forCwd().getCatalogs()).toEqual({
+        default: { react: "^18.2.0" },
+        legacy: { react: "^17.0.0" },
+      });
+    });
+
+    it("should resolve catalog specifiers by dependency name", () => {
+      createFixture({
+        root,
+        workspace: {
+          packages: ["packages/*"],
+          catalog: { react: "^18.2.0" },
+          catalogs: { legacy: { react: "^17.0.0" } },
+        },
+      });
+      const workspace = Workspace.forCwd();
+
+      expect(workspace.resolveCatalogSpecifier("react", "catalog:")).toBe(
+        "^18.2.0",
+      );
+      expect(
+        workspace.resolveCatalogSpecifier("react", "catalog:default"),
+      ).toBe("^18.2.0");
+      expect(
+        workspace.resolveCatalogSpecifier("react", "catalog: legacy"),
+      ).toBe("^17.0.0");
+      expect(workspace.resolveCatalogSpecifier("react", "^16.0.0")).toBe(
+        "^16.0.0",
+      );
+      expect(
+        workspace.resolveCatalogSpecifier("vue", "catalog:"),
+      ).toBeUndefined();
+      expect(
+        workspace.resolveCatalogSpecifier("react", "catalog:missing"),
+      ).toBeUndefined();
+    });
+
+    it("should use catalogs.default as the default catalog", () => {
+      createFixture({
+        root,
+        workspace: {
+          packages: ["packages/*"],
+          catalogs: { default: { react: "^18.2.0" } },
+        },
+      });
+
+      expect(
+        Workspace.forCwd().resolveCatalogSpecifier("react", "catalog:"),
+      ).toBe("^18.2.0");
+    });
+
+    it("should read catalogs of a settings-only pnpm-workspace.yaml", () => {
+      createFixture({ root, workspace: "catalog:\n  react: ^18.2.0\n" });
+      const workspace = Workspace.forCwd();
+
+      expect(workspace.isMonorepo()).toBe(false);
+      expect(workspace.getCatalogs()).toEqual({
+        default: { react: "^18.2.0" },
+      });
+    });
+
+    it("should have no catalogs without pnpm-workspace.yaml", () => {
+      createFixture({ root });
+
+      expect(Workspace.forCwd().getCatalogs()).toEqual({});
+    });
+
+    it("should reject a default catalog declared twice", () => {
+      createFixture({
+        root,
+        workspace: {
+          packages: ["packages/*"],
+          catalog: { react: "^18.2.0" },
+          catalogs: { default: { react: "^17.0.0" } },
+        },
+      });
+
+      expect(() => Workspace.forCwd().getCatalogs()).toThrow(
+        "declares the default catalog twice",
+      );
+    });
+
+    it("should reject a malformed catalog", () => {
+      createFixture({
+        root,
+        workspace: "packages:\n  - packages/*\ncatalog:\n  - react\n",
+      });
+
+      expect(() => Workspace.forCwd().getCatalogs()).toThrow('"catalog" in');
+    });
+  });
 });
