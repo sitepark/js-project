@@ -118,9 +118,9 @@ js-project startHotfix <tag> [--package-manager <yarn|npm|pnpm>]
 2. Finds the latest patch version for the specified minor version
 3. Creates branch `hotfix/X.Y.x` from that release
 4. Increments patch version and adds `-SNAPSHOT` suffix
-5. Updates `package.json` with new version
-6. Formats `package.json`
-7. Commits the version change with message: `ci(release): updating package.json set version to X.Y.Z-SNAPSHOT`
+5. Updates `package.json` with new version (in a monorepo: the root and every workspace `package.json` of the base tag)
+6. Formats `package.json` (runs the root `format:package-json` script once)
+7. Commits the version change (all written `package.json` files) with message: `ci(release): updating package.json set version to X.Y.Z-SNAPSHOT`
 
 **Example**:
 
@@ -154,20 +154,20 @@ js-project release [--package-manager <yarn|npm|pnpm>]
 **What it does**:
 
 1. Validates prerequisites
-2. Converts SNAPSHOT version to release version (removes `-SNAPSHOT`)
-3. Formats `package.json`
+2. Converts SNAPSHOT version to release version (removes `-SNAPSHOT`); in a monorepo it is written into the root and every workspace `package.json`
+3. Formats `package.json` (runs the root `format:package-json` script once)
 4. Runs build pipeline:
    - `pnpm test` (if script exists)
    - `pnpm verify` (if script exists)
    - `pnpm build` (if script exists)
    - `pnpm publish` (if script exists — optional publish hook, e.g. for additional artifact publishing)
    - Publishes to npm registry
-5. Commits release version: `ci(release): updating package.json set version to X.Y.Z`
-6. Creates Git tag: `X.Y.Z` with message "Release Version X.Y.Z"
+5. Commits release version (all written `package.json` files): `ci(release): Release X.Y.Z`
+6. Creates Git tag: `X.Y.Z` with message "Release Version X.Y.Z" (one tag, also in a monorepo)
 7. Calculates next SNAPSHOT version:
    - For `hotfix/*` branches: increments patch (e.g., `2.1.1` → `2.1.2-SNAPSHOT`)
    - For `main` and `support/*` branches: increments minor (e.g., `2.1.0` → `2.2.0-SNAPSHOT`)
-8. Commits next SNAPSHOT version: `ci(release): updating package.json set version to X.Y.Z-SNAPSHOT`
+8. Writes the next SNAPSHOT version (in a monorepo into every `package.json`) and commits it: `ci(release): updating package.json set version to X.Y.Z-SNAPSHOT`
 
 **Example workflow on main branch**:
 
@@ -240,6 +240,18 @@ The workspace packages are the directories matched by the `packages:` globs, res
 **pnpm only**: Monorepo mode currently requires pnpm. If a workspace is detected and the package manager is `npm` or `yarn` (via `--package-manager` or `JS_PROJECT_PACKAGE_MANAGER`), `verifyRelease`, `startHotfix`, `release` and `publish` fail with `Monorepo mode currently requires pnpm ...`. A workspace declared only by the `workspaces` field in `package.json` is rejected with pnpm too, because pnpm ignores that field; declare the packages in `pnpm-workspace.yaml` instead.
 
 **Run from the workspace root**: All commands must be run from the workspace root. Running any command from a subdirectory of a workspace (e.g. `packages/a`) fails with an error that names the workspace root to change to. The search for an enclosing workspace stops at the root of the git repository.
+
+### Fixed (lockstep) versioning
+
+A workspace has exactly one version, and the root `package.json` is its single source of truth. Every workspace package, private or not, mirrors the root version:
+
+- `release` writes the release version and afterwards the next SNAPSHOT version into the root and every workspace `package.json`. Both the release commit and the next-SNAPSHOT commit include all of these files. There is still exactly one bare `X.Y.Z` tag per release.
+- `startHotfix` writes the hotfix SNAPSHOT version into the root and every workspace `package.json` of the base tag and commits all of them on the `hotfix/X.Y.x` branch.
+- Versions are always copied from the root, so packages whose version drifted (e.g. still at `0.0.0`) are healed by the next `release` or `startHotfix` without manual steps. Only the `version` field is changed; all other keys stay as they are.
+
+**`format:package-json` in monorepos**: After the versions are written, `js-project` runs the root `format:package-json` script exactly once, in the workspace root. It is not run per package, so the root script is responsible for formatting every workspace `package.json`, e.g. `"format:package-json": "prettier --write package.json 'packages/*/package.json'"`.
+
+Every `package.json` written by `js-project` (in monorepos and single-package repositories) uses 2-space indentation and ends with a trailing newline.
 
 ---
 

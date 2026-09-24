@@ -123,12 +123,12 @@ Hotfix workflow:
 **Release Process (`ReleaseManagement.release()`):**
 
 1. Validate current state (must be SNAPSHOT on allowed branch)
-2. Convert version to release version
-3. Format package.json
+2. Convert version to release version (root and every workspace package)
+3. Format package.json (root `format:package-json`, once)
 4. Run build pipeline: test → verify → build → publish
-5. Commit release version and create Git tag
-6. Update to next SNAPSHOT version
-7. Commit SNAPSHOT version
+5. Commit release version (all touched package.json files) and create Git tag
+6. Update to next SNAPSHOT version (root and every workspace package)
+7. Commit SNAPSHOT version (all touched package.json files)
 
 **Publishing Logic (`PublisherProvider.publish()`):**
 
@@ -145,6 +145,10 @@ Hotfix workflow:
 - **Discovery**: `packages:` globs are resolved like pnpm does (tinyglobby, `<glob>/package.json`, negations apply globally, `node_modules`/`bower_components` ignored, no implicit dot directories, symlinks not followed as in pnpm 12). The root is always the first package. Workspace packages must have a `package.json` (`package.yaml`/`package.json5` are rejected).
 - **Guards**: `Workspace.forCwd()` / `Workspace.forProject()` fail when the directory is inside a workspace but not its root (search stops at the git repository root), and, when a `packageManager` option is given, when a detected workspace is used with npm or yarn ("monorepo mode currently requires pnpm") or declared only by the `workspaces` field.
 - All CLI commands obtain the root `Project` via `Workspace.forCwd({ packageManager })`. `Project` stays a single-package abstraction; `Project.forCwd()` keeps returning the root package.
+- **Fixed (lockstep) versioning**: one version for the whole workspace, the root `package.json` is the single source of truth, one bare `X.Y.Z` tag, one `hotfix/X.Y.x` line. `Workspace.writeVersion(version)` writes the root (through `Project.updateVersion`) and every workspace package, private or not, so drift heals itself; `Workspace.getPackageJsonPaths()` lists the touched files (root first, relative to the root) for `git add`.
+- `ReleaseManagement` takes the `Workspace` as optional 5th constructor argument (`ReleaseManagementFactory.forCwd` keeps its signature and builds it via `Workspace.forProject(project)`). `release()` / `startHotfix()` write versions through it and commit all touched `package.json` files (`Git.commit` accepts `string | string[]`). `startHotfix()` rebuilds the workspace after checking out the base tag, because the package set may differ there. Without a workspace only the root `package.json` is written and committed (used by the mock-based unit tests).
+- `format:package-json` runs exactly once, at the root, after the versions are written; formatting the workspace `package.json` files is the responsibility of that root script.
+- Every `package.json` written by js-project uses `serializePackageJson()` (`src/PackageJson.ts`): 2-space JSON plus a trailing newline.
 
 ### Environment Variables
 
