@@ -133,6 +133,7 @@ Hotfix workflow:
 
 - For SNAPSHOT: appends timestamp to version
 - Determines npm dist-tag: `latest` for releases, `next` for newer SNAPSHOTs
+- Skips a private root package (`"private": true`) with a log message instead of publishing it
 - Registries are configured exclusively via the `JS_PROJECT_SNAPSHOT_REGISTRY` / `JS_PROJECT_RELEASE_REGISTRY` environment variables (no `publishConfig` registry support)
 
 ### Environment Variables
@@ -177,6 +178,7 @@ When adding new tests:
 - Use Vitest's `describe`, `it`, `expect` for test structure
 - Use `vi.fn()` and `vi.mocked()` for mocking
 - Use `beforeEach` for test setup to avoid duplication
+- For behaviour tests against real projects on disk, use `test/support/fixtureHarness.ts`: `createFixture()` writes a fixture project/workspace into a temp dir and makes it the cwd, `recordExecSync()` (together with `vi.mock("node:child_process")` in the test file) records every `execSync` command and returns canned output. Enter through the public API (`Project.forCwd()`, `NodePublisherProvider`, `ReleaseManagementFactory`)
 
 ## Git Hooks
 
