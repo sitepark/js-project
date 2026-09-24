@@ -371,6 +371,14 @@ function findSnapshotDependencies(
   return snapshots;
 }
 
+/**
+ * `true` if a dependency specifier references a SNAPSHOT. Deliberately a
+ * substring check rather than `isSnapshot()` from `version.ts`, which parses
+ * an exact version with semver: specifiers are ranges
+ * (`^1.2.0-SNAPSHOT`, `>=1.0.0-SNAPSHOT <2`) or non-semver strings
+ * (`1.0-SNAPSHOT`), which semver can't parse as a version. This is the check
+ * `verifyRelease` has always used.
+ */
 function isSnapshotSpecifier(specifier: string): boolean {
   return specifier.includes("-SNAPSHOT");
 }
