@@ -5,7 +5,9 @@ on: workflow_dispatch
 jobs:
   release:
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      contents: write
+      id-token: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -13,8 +15,6 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v6
-        with:
-          version: 10
 
       - uses: actions/setup-node@v7
         with:
@@ -25,8 +25,8 @@ jobs:
       - name: Prepare Release
         run: |
 
-          git config --global user.email sitepark-bot
-          git config --global user.name opensource@sitepark.com
+          git config --global user.email opensource@sitepark.com
+          git config --global user.name sitepark-bot
 
           pnpm install
           pnpm build
@@ -45,10 +45,3 @@ jobs:
           dist/cli.js release --package-manager pnpm
 
           gh workflow run create-github-release.yml --ref $RELEASE_VERSION
-
-      - name: Upload to Codecov
-        uses: codecov/codecov-action@v7
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage/coverage-final.json
-          verbose: true

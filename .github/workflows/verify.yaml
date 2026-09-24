@@ -1,9 +1,19 @@
 name: (📡) Verify
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
 
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   verify:
@@ -13,14 +23,20 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v6
-        with:
-          version: 10
 
       - uses: actions/setup-node@v7
         with:
           node-version: "24"
-          registry-url: "https://registry.npmjs.org"
           cache: "pnpm"
       - run: pnpm install
+      - run: pnpm build
       - run: pnpm test
       - run: pnpm verify
+
+      - name: Upload to Codecov
+        if: github.event_name == 'push'
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: build/coverage/cobertura-coverage.xml
+          verbose: true

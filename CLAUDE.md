@@ -26,7 +26,7 @@ pnpm test:coverage     # Run tests with coverage report
 # Format code with Prettier
 pnpm format
 
-# Full verification (build + optional verification scripts)
+# Check formatting with Prettier (does not build)
 pnpm verify
 ```
 
@@ -213,6 +213,12 @@ When adding new tests:
 - Use `vi.fn()` and `vi.mocked()` for mocking
 - Use `beforeEach` for test setup to avoid duplication
 - For behaviour tests against real projects on disk, use `test/support/fixtureHarness.ts`: `createFixture()` writes a fixture project/workspace into a temp dir and makes it the cwd, `recordExecSync()` (together with `vi.mock("node:child_process")` in the test file) records every `execSync` command and returns canned output. Enter through the public API (`Project.forCwd()`, `Workspace.forCwd()`, `NodePublisherProvider`, `ReleaseManagementFactory`, the command functions in `src/commands/`)
+
+## CI (GitHub Actions)
+
+- `verify.yaml` - on pull requests, pushes to `main` and manual runs: `pnpm install` → `build` (includes the `tsc` type check) → `test` → `verify`. On pushes to `main` it also uploads `build/coverage/cobertura-coverage.xml` to Codecov
+- `release.yaml` - manual only: runs `js-project release` (publishes to npm with provenance via OIDC, pushes with `BOT_PAT`), then triggers `create-github-release.yml`
+- The pnpm version comes from the `packageManager` field in `package.json`; keep it in line with the local pnpm used to write `pnpm-lock.yaml`
 
 ## Git Hooks
 
