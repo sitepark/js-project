@@ -298,6 +298,84 @@ describe("ReleaseManagementFactory in a pnpm workspace", () => {
   });
 });
 
+describe("ReleaseManagementFactory in a pnpm workspace with the real NodePublisherProvider", () => {
+  beforeEach(() => {
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "group").mockImplementation(() => {});
+    vi.spyOn(console, "groupEnd").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("should build, commit, tag, publish every public package once and continue with the next SNAPSHOT", async () => {
+    const fixture = createFixture(workspaceFixture("1.2.0-SNAPSHOT"));
+    const exec = recordExecSync({
+      branch: "main",
+      tags: ["1.1.0"],
+      env: { JS_PROJECT_RELEASE_REGISTRY: "https://registry.example" },
+    });
+    const versionsAt: Record<string, string[]> = {};
+    exec.respond(/^git add |^pnpm -r publish/, (command) => {
+      versionsAt[command] = versions(fixture);
+      return "";
+    });
+    const releaseFiles: string[] = [];
+    exec.respond(/^git tag -a/, () => {
+      releaseFiles.push(...ALL_PACKAGE_JSONS.map((f) => fixture.readFile(f)));
+      return "";
+    });
+    const filesAfterPublish: string[] = [];
+    const project = Project.forCwd();
+    const publisher = new NodePublisherProvider(project, "pnpm");
+    const publish = publisher.publish.bind(publisher);
+    vi.spyOn(publisher, "publish").mockImplementation(async () => {
+      await publish();
+      filesAfterPublish.push(
+        ...ALL_PACKAGE_JSONS.map((f) => fixture.readFile(f)),
+      );
+    });
+
+    const version = await ReleaseManagementFactory.forCwd(
+      project,
+      new BuildProvider(project, "pnpm"),
+      publisher,
+    ).release();
+
+    const staged = ALL_PACKAGE_JSONS.join(" ");
+    const releaseCommit = `git add ${staged} && git commit -m "ci(release): Release 1.2.0"`;
+    const publishCommand =
+      "pnpm -r publish --ignore-scripts --no-git-checks --registry https://registry.example --tag latest";
+    const snapshotCommit = `git add ${staged} && git commit -m "ci(release): Updating package.json set version to 1.3.0-SNAPSHOT"`;
+    expect(version).toBe("1.2.0");
+    expect(
+      exec.commandsMatching(/^pnpm |^git (add|tag -a|push)|publish/),
+    ).toEqual([
+      "pnpm run format:package-json",
+      "pnpm run test",
+      "pnpm run build",
+      releaseCommit,
+      'git tag -a 1.2.0 -m "Release Version 1.2.0"',
+      publishCommand,
+      snapshotCommit,
+      "git push -u origin main",
+      "git push --tags",
+    ]);
+    expect(versionsAt).toEqual({
+      [releaseCommit]: ["1.2.0", "1.2.0", "1.2.0", "1.2.0"],
+      [publishCommand]: ["1.2.0", "1.2.0", "1.2.0", "1.2.0"],
+      [snapshotCommit]: Array(4).fill("1.3.0-SNAPSHOT"),
+    });
+    // publish() restores the committed release files byte for byte
+    expect(filesAfterPublish).toEqual(releaseFiles);
+    expect(fixture.readJson("packages/c").dependencies).toEqual({
+      "@scope/a": "workspace:*",
+    });
+    expect(versions(fixture)).toEqual(Array(4).fill("1.3.0-SNAPSHOT"));
+  });
+});
+
 describe("ReleaseManagementFactory in a workspace with npm or yarn", () => {
   beforeEach(() => {
     vi.spyOn(console, "log").mockImplementation(() => {});
