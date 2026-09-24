@@ -18,8 +18,10 @@ export type RuntimeDependencySection = "dependencies" | "peerDependencies";
  * doesn't exist on any registry.
  */
 export interface PrivateSiblingDependency {
-  /** name (or path relative to the root) of the public package */
-  package: string;
+  /** name of the public package (its directory if it has no name) */
+  packageName: string;
+  /** path of its `package.json`, relative to the workspace root */
+  packagePath: string;
   /** name of the private sibling */
   dependency: string;
   section: RuntimeDependencySection;
@@ -28,8 +30,10 @@ export interface PrivateSiblingDependency {
 
 /** A workspace package whose version differs from the root version. */
 export interface VersionDrift {
-  /** name (or path relative to the root) of the package */
-  package: string;
+  /** name of the package (its directory if it has no name) */
+  packageName: string;
+  /** path of its `package.json`, relative to the workspace root */
+  packagePath: string;
   /** version of the package, `undefined` if it has none */
   version: string | undefined;
   rootVersion: string | undefined;
@@ -134,7 +138,7 @@ export class VerificationReport {
 
   toString(): string {
     const failures = [
-      this.formatSnapshotDependencies(),
+      this.snapshotDependencySection(),
       this.privateSiblingSection(),
     ].filter((section): section is string => section !== undefined);
     const information = [this.versionDriftSection()].filter(
@@ -197,7 +201,7 @@ export class VerificationReport {
     return report;
   }
 
-  private formatSnapshotDependencies(): string | undefined {
+  private snapshotDependencySection(): string | undefined {
     const dependencies = this.getSnapshotDependencies();
     if (dependencies.length === 0) {
       return undefined;
@@ -206,9 +210,12 @@ export class VerificationReport {
     // headers; monorepos group the findings by package.
     const monorepo = this.getWorkspace().isMonorepo();
     const indent = monorepo ? "\t" : "";
-    const byPackage = groupBy(dependencies, (d) => d.packagePath);
-    const report = [...byPackage.values()]
-      .map((packageDependencies) => {
+    const byPackage = groupBy(
+      dependencies,
+      (d) => `${d.packageName} (${d.packagePath}):`,
+    );
+    const report = [...byPackage]
+      .map(([header, packageDependencies]) => {
         const bySection = groupBy(packageDependencies, (d) => d.section);
         const sections = SNAPSHOT_SECTIONS.filter((s) => bySection.has(s)).map(
           (section) => {
@@ -221,8 +228,7 @@ export class VerificationReport {
         if (!monorepo) {
           return sections.join("\n");
         }
-        const { packageName, packagePath } = packageDependencies[0]!;
-        return [`${packageName} (${packagePath}):`, ...sections].join("\n");
+        return [header, ...sections].join("\n");
       })
       .join("\n");
 
@@ -263,7 +269,8 @@ export class VerificationReport {
         )) {
           if (privateSiblings.has(dependency) && dependency !== pkg.getName()) {
             result.push({
-              package: pkg.getDisplayName(),
+              packageName: pkg.getDisplayName(),
+              packagePath: pkg.getRelativePackagePath(),
               dependency,
               section,
               versionRange,
@@ -282,7 +289,7 @@ export class VerificationReport {
     }
     const lines = dependencies.map(
       (dep) =>
-        `\t${dep.package} -> ${dep.dependency} (${dep.section}: ${dep.versionRange})`,
+        `\t${dep.packageName} -> ${dep.dependency} (${dep.section}: ${dep.versionRange})`,
     );
     return (
       "Public packages depend on private workspace packages:\n\n" +
@@ -310,7 +317,8 @@ export class VerificationReport {
     return packages
       .filter((pkg) => !pkg.isRoot() && pkg.getVersion() !== rootVersion)
       .map((pkg) => ({
-        package: pkg.getDisplayName(),
+        packageName: pkg.getDisplayName(),
+        packagePath: pkg.getRelativePackagePath(),
         version: pkg.getVersion(),
         rootVersion,
       }));
@@ -323,7 +331,7 @@ export class VerificationReport {
     }
     const rootVersion = drift[0]?.rootVersion ?? "(none)";
     const lines = drift.map(
-      (item) => `\t${item.package} - ${item.version ?? "(none)"}`,
+      (item) => `\t${item.packageName} - ${item.version ?? "(none)"}`,
     );
     return (
       `Information: packages with a version other than the root version ${rootVersion}:\n\n` +
