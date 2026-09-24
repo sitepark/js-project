@@ -1,8 +1,6 @@
-import { Git } from "../Git.js";
-import { Project } from "../Project.js";
+import { Workspace } from "../Workspace.js";
 
 export function releaseVersionCommand(): void {
-  const git = new Git();
-  const project = Project.forCwd(git);
+  const project = Workspace.forCwd().getRoot();
   console.log(project.getNextReleaseVersion());
 }

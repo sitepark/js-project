@@ -74,6 +74,7 @@ The architecture follows a clean separation of concerns with provider pattern fo
 - `Project` - Represents a Node.js project, manages package.json, version queries, and dependency analysis
 - `Git` - Git operations wrapper (branches, tags, commits, version queries)
 - `ReleaseManagement` - Orchestrates the release workflow (release creation, hotfix management, verification)
+- `Workspace` - The set of packages rooted at a root `Project` (see Monorepo Mode below). A single-package repo is a workspace containing only the root, so callers don't branch
 
 **Provider Interfaces:**
 
@@ -136,6 +137,15 @@ Hotfix workflow:
 - Skips a private root package (`"private": true`) with a log message instead of publishing it
 - Registries are configured exclusively via the `JS_PROJECT_SNAPSHOT_REGISTRY` / `JS_PROJECT_RELEASE_REGISTRY` environment variables (no `publishConfig` registry support)
 
+### Monorepo Mode
+
+`Workspace` (`src/Workspace.ts`, exported from the index) owns workspace detection and package discovery:
+
+- **Detection**: monorepo mode when the root has a `pnpm-workspace.yaml` with a `packages:` key, or a root `package.json` with a `workspaces` field. A settings-only `pnpm-workspace.yaml` is not a workspace.
+- **Discovery**: `packages:` globs are resolved like pnpm does (tinyglobby, `<glob>/package.json`, negations apply globally, `node_modules`/`bower_components` ignored, no implicit dot directories, symlinks not followed as in pnpm 12). The root is always the first package. Workspace packages must have a `package.json` (`package.yaml`/`package.json5` are rejected).
+- **Guards**: `Workspace.forCwd()` / `Workspace.forProject()` fail when the directory is inside a workspace but not its root (search stops at the git repository root), and, when a `packageManager` option is given, when a detected workspace is used with npm or yarn ("monorepo mode currently requires pnpm") or declared only by the `workspaces` field.
+- All CLI commands obtain the root `Project` via `Workspace.forCwd({ packageManager })`. `Project` stays a single-package abstraction; `Project.forCwd()` keeps returning the root package.
+
 ### Environment Variables
 
 - `JS_PROJECT_PACKAGE_MANAGER` - Default package manager when not specified via CLI (defaults to pnpm)
@@ -178,7 +188,7 @@ When adding new tests:
 - Use Vitest's `describe`, `it`, `expect` for test structure
 - Use `vi.fn()` and `vi.mocked()` for mocking
 - Use `beforeEach` for test setup to avoid duplication
-- For behaviour tests against real projects on disk, use `test/support/fixtureHarness.ts`: `createFixture()` writes a fixture project/workspace into a temp dir and makes it the cwd, `recordExecSync()` (together with `vi.mock("node:child_process")` in the test file) records every `execSync` command and returns canned output. Enter through the public API (`Project.forCwd()`, `NodePublisherProvider`, `ReleaseManagementFactory`)
+- For behaviour tests against real projects on disk, use `test/support/fixtureHarness.ts`: `createFixture()` writes a fixture project/workspace into a temp dir and makes it the cwd, `recordExecSync()` (together with `vi.mock("node:child_process")` in the test file) records every `execSync` command and returns canned output. Enter through the public API (`Project.forCwd()`, `Workspace.forCwd()`, `NodePublisherProvider`, `ReleaseManagementFactory`, the command functions in `src/commands/`)
 
 ## Git Hooks
 
@@ -187,7 +197,7 @@ When adding new tests:
 
 ## Package Manager Support
 
-Commands support `--package-manager` flag to specify yarn, npm, or pnpm. Falls back to `JS_PROJECT_PACKAGE_MANAGER` environment variable if not specified.
+Commands support `--package-manager` flag to specify yarn, npm, or pnpm. Falls back to `JS_PROJECT_PACKAGE_MANAGER` environment variable if not specified. Monorepo mode (a detected workspace) requires pnpm.
 
 ## Agent skills
 

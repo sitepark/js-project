@@ -49,7 +49,7 @@ js-project version
 
 **Output example**: `1.2.0-SNAPSHOT`
 
-**Use case**: Useful in CI/CD pipelines to determine the current version.
+**Use case**: Useful in CI/CD pipelines to determine the current version. In a monorepo it prints the version of the root `package.json`.
 
 ---
 
@@ -224,6 +224,25 @@ js-project publish [--package-manager <yarn|npm|pnpm>]
 
 ---
 
+## Monorepos (pnpm workspaces)
+
+`js-project` detects a workspace at the repository root automatically; no configuration is needed.
+
+**Detection**: The repository is a workspace (monorepo mode) when the root contains
+
+- a `pnpm-workspace.yaml` with a `packages:` key, or
+- a `package.json` with a `workspaces` field (npm / yarn workspaces).
+
+A `pnpm-workspace.yaml` that only contains settings (e.g. `allowBuilds`, `catalog`, but no `packages:`) does **not** enable monorepo mode; such a repository is treated as a single-package repository and behaves exactly as before.
+
+The workspace packages are the directories matched by the `packages:` globs, resolved the way pnpm resolves them: negations (`!packages/internal`) exclude packages regardless of their position in the list, `node_modules` and `bower_components` are never searched, dot directories are only matched when named explicitly, and symbolically linked directories are not followed. The root package is always part of the workspace and holds the project version; the `version` command prints the root version.
+
+**pnpm only**: Monorepo mode currently requires pnpm. If a workspace is detected and the package manager is `npm` or `yarn` (via `--package-manager` or `JS_PROJECT_PACKAGE_MANAGER`), `verifyRelease`, `startHotfix`, `release` and `publish` fail with `Monorepo mode currently requires pnpm ...`. A workspace declared only by the `workspaces` field in `package.json` is rejected with pnpm too, because pnpm ignores that field; declare the packages in `pnpm-workspace.yaml` instead.
+
+**Run from the workspace root**: All commands must be run from the workspace root. Running any command from a subdirectory of a workspace (e.g. `packages/a`) fails with an error that names the workspace root to change to. The search for an enclosing workspace stops at the root of the git repository.
+
+---
+
 ## SNAPSHOT Versions
 
 SNAPSHOT versions are pre-release development versions used during active development before creating an official release.
@@ -345,6 +364,7 @@ js-project/
 │   ├── cli.ts              # CLI entry point
 │   ├── commands/           # CLI commands
 │   ├── Project.ts          # Project management
+│   ├── Workspace.ts        # Workspace detection and package discovery
 │   ├── Git.ts              # Git operations
 │   ├── ReleaseManagement.ts
 │   ├── BuildProvider.ts

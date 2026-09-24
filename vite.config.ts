@@ -26,6 +26,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
+    // fixture tests (test/support/fixtureHarness.ts) rely on process.chdir(),
+    // which is only available in child processes, not in worker threads
+    pool: "forks",
     reporters: ["junit", "default"],
     outputFile: "./build/junit-report.xml",
     include: ["test/**/*.test.ts"],
