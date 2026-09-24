@@ -14,7 +14,13 @@ export { ReleaseManagement } from "./ReleaseManagement.js";
 export { ReleaseManagementFactory } from "./ReleaseManagementFactory.js";
 export { BranchType } from "./BranchType.js";
 export {
+  VerificationReport,
+  type DependencyReport,
+  type SnapshotDependency,
+} from "./VerificationReport.js";
+export {
   Workspace,
+  type Catalogs,
   type DependencySection,
   type WorkspaceOptions,
   type WorkspacePackage,

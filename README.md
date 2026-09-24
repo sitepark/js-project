@@ -73,7 +73,14 @@ js-project releaseVersion
 
 Verifies that the project is ready for a release by checking:
 
-- No SNAPSHOT dependencies in `dependencies`, `devDependencies`, or `peerDependencies`
+- No external SNAPSHOT dependencies in `dependencies`, `devDependencies`, `peerDependencies` or `optionalDependencies`
+
+The SNAPSHOT check covers the root package and, in a [monorepo](#monorepos-pnpm-workspaces), every workspace package. A dependency is a SNAPSHOT dependency if its version specifier contains `-SNAPSHOT`:
+
+- `workspace:` specifiers (`workspace:*`, `workspace:^`, `workspace:~`, ...) are ignored, because workspace siblings share the version of the root.
+- `catalog:` (default catalog) and `catalog:<name>` (named catalog) specifiers are resolved against the `catalog` / `catalogs` of `pnpm-workspace.yaml` first, so a SNAPSHOT pinned in a catalog is reported. A catalog reference without a matching catalog entry is not reported (pnpm refuses to install it anyway).
+
+Any SNAPSHOT dependency makes the verification fail.
 
 Registries are not part of the verification; they are configured exclusively via environment variables (see [Registry Configuration](#registry-configuration)).
 
@@ -94,6 +101,18 @@ Snapshot-Version detected:
 dependencies:
   @sitepark/some-package - ^1.0.0-SNAPSHOT
 
+```
+
+In a monorepo the findings are grouped by the offending package; catalog entries show the resolved specifier followed by the declared one:
+
+```
+Snapshot-Version detected:
+
+@sitepark/a (packages/a/package.json):
+  dependencies:
+    @sitepark/some-package - ^1.0.0-SNAPSHOT
+  peerDependencies:
+    @sitepark/other - ^2.0.0-SNAPSHOT (catalog:)
 ```
 
 **Use case**: Run in CI/CD pipelines before attempting a release to catch configuration issues early.
@@ -238,6 +257,8 @@ A `pnpm-workspace.yaml` that only contains settings (e.g. `allowBuilds`, `catalo
 The workspace packages are the directories matched by the `packages:` globs, resolved the way pnpm resolves them: negations (`!packages/internal`) exclude packages regardless of their position in the list, `node_modules` and `bower_components` are never searched, dot directories are only matched when named explicitly, and symbolically linked directories are not followed. The root package is always part of the workspace and holds the project version; the `version` command prints the root version.
 
 **pnpm only**: Monorepo mode currently requires pnpm. If a workspace is detected and the package manager is `npm` or `yarn` (via `--package-manager` or `JS_PROJECT_PACKAGE_MANAGER`), `verifyRelease`, `startHotfix`, `release` and `publish` fail with `Monorepo mode currently requires pnpm ...`. A workspace declared only by the `workspaces` field in `package.json` is rejected with pnpm too, because pnpm ignores that field; declare the packages in `pnpm-workspace.yaml` instead.
+
+**Verification**: `verifyRelease` checks the root and every workspace package for external SNAPSHOT dependencies, resolving `catalog:` specifiers and ignoring `workspace:` specifiers (see [verifyRelease](#verifyrelease)).
 
 **Run from the workspace root**: All commands must be run from the workspace root. Running any command from a subdirectory of a workspace (e.g. `packages/a`) fails with an error that names the workspace root to change to. The search for an enclosing workspace stops at the root of the git repository.
 
