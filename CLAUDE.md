@@ -184,3 +184,17 @@ When adding new tests:
 ## Package Manager Support
 
 Commands support `--package-manager` flag to specify yarn, npm, or pnpm. Falls back to `JS_PROJECT_PACKAGE_MANAGER` environment variable if not specified.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live in GitHub Issues for `sitepark/js-project`, managed via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
