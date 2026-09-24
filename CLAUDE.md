@@ -134,7 +134,8 @@ Hotfix workflow:
 
 - For SNAPSHOT: appends timestamp to version
 - Determines npm dist-tag: `latest` for releases, `next` for newer SNAPSHOTs
-- Skips a private root package (`"private": true`) with a log message instead of publishing it
+- Single-package repo: `<pm> publish`; skips a private root package (`"private": true`) with a log message instead of publishing it. Never uses `-r` (without a workspace, pnpm would treat every nested `package.json` as a package)
+- pnpm workspace: `Workspace.captureFiles()` → `Workspace.writeVersion(publishVersion)` (root and every package, also for releases) → one `pnpm -r publish` → `Workspace.restoreFiles()` in `finally` (byte-identical). pnpm's recursive publish includes a non-private root and skips private packages, so the root is never published separately. Nothing runs when every package is private
 - Registries are configured exclusively via the `JS_PROJECT_SNAPSHOT_REGISTRY` / `JS_PROJECT_RELEASE_REGISTRY` environment variables (no `publishConfig` registry support)
 
 ### Monorepo Mode
@@ -144,6 +145,7 @@ Hotfix workflow:
 - **Detection**: monorepo mode when the root has a `pnpm-workspace.yaml` with a `packages:` key, or a root `package.json` with a `workspaces` field. A settings-only `pnpm-workspace.yaml` is not a workspace.
 - **Discovery**: `packages:` globs are resolved like pnpm does (tinyglobby, `<glob>/package.json`, negations apply globally, `node_modules`/`bower_components` ignored, no implicit dot directories, symlinks not followed as in pnpm 12). The root is always the first package. Workspace packages must have a `package.json` (`package.yaml`/`package.json5` are rejected).
 - **Guards**: `Workspace.forCwd()` / `Workspace.forProject()` fail when the directory is inside a workspace but not its root (search stops at the git repository root), and, when a `packageManager` option is given, when a detected workspace is used with npm or yarn ("monorepo mode currently requires pnpm") or declared only by the `workspaces` field.
+- **Writing**: `writeVersion(version)` writes the root through `Project.updateVersion` and every workspace `package.json`; `getPackageJsonPaths()` lists the touched files (root first, relative); `captureFiles()` / `restoreFiles()` save and write back the raw bytes and re-read the root `Project`.
 - All CLI commands obtain the root `Project` via `Workspace.forCwd({ packageManager })`. `Project` stays a single-package abstraction; `Project.forCwd()` keeps returning the root package.
 
 ### Environment Variables

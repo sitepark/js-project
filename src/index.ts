@@ -16,6 +16,7 @@ export { BranchType } from "./BranchType.js";
 export {
   Workspace,
   type DependencySection,
+  type WorkspaceFiles,
   type WorkspaceOptions,
   type WorkspacePackage,
 } from "./Workspace.js";

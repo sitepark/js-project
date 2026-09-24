@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { globSync } from "tinyglobby";
 import { parse as parseYaml } from "yaml";
@@ -19,6 +19,25 @@ export interface WorkspaceOptions {
    * workspace is rejected unless the package manager is pnpm.
    */
   packageManager?: SupportedPackageManager;
+}
+
+/**
+ * The raw contents of every `package.json` of a workspace, as returned by
+ * {@link Workspace.captureFiles}. Opaque: pass it to
+ * {@link Workspace.restoreFiles} to write exactly these bytes back.
+ */
+export class WorkspaceFiles {
+  readonly #contents: ReadonlyMap<string, Buffer>;
+
+  /** @internal created by {@link Workspace.captureFiles} only */
+  constructor(contents: ReadonlyMap<string, Buffer>) {
+    this.#contents = contents;
+  }
+
+  /** @internal */
+  static contentsOf(files: WorkspaceFiles): ReadonlyMap<string, Buffer> {
+    return files.#contents;
+  }
 }
 
 /**
@@ -153,6 +172,73 @@ export class Workspace {
    */
   public getPackages(): readonly WorkspacePackage[] {
     return this.packages;
+  }
+
+  /**
+   * The `package.json` paths a version change touches, relative to the
+   * workspace root with `/` separators: the root `package.json` first,
+   * followed by those of the workspace packages. `["package.json"]` for a
+   * single-package repository.
+   */
+  public getPackageJsonPaths(): string[] {
+    const rootDir = this.root.getBasePath();
+    return this.packages.map((pkg) =>
+      path.relative(rootDir, pkg.getPackagePath()).split(path.sep).join("/"),
+    );
+  }
+
+  /**
+   * Writes `version` into the root `package.json` (through the root
+   * {@link Project}, which stays in sync) and into the `package.json` of
+   * every workspace package, private or not. All other keys are left
+   * untouched.
+   */
+  public writeVersion(version: string): void {
+    this.root.updateVersion(version);
+    for (const pkg of this.packages) {
+      if (pkg.isRoot()) {
+        continue;
+      }
+      const file = pkg.getPackagePath();
+      const manifest = readJson(file);
+      manifest.version = version;
+      writeFileSync(file, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+    }
+  }
+
+  /**
+   * Saves the raw contents of every `package.json` listed by
+   * {@link getPackageJsonPaths}, to be written back by {@link restoreFiles}.
+   */
+  public captureFiles(): WorkspaceFiles {
+    return new WorkspaceFiles(
+      new Map(
+        this.packages.map((pkg) => [
+          pkg.getPackagePath(),
+          readFileSync(pkg.getPackagePath()),
+        ]),
+      ),
+    );
+  }
+
+  /**
+   * Writes back exactly the bytes saved by {@link captureFiles} and re-reads
+   * the root {@link Project}. Every file is attempted even if one fails; the
+   * first error is rethrown afterwards.
+   */
+  public restoreFiles(files: WorkspaceFiles): void {
+    const errors: unknown[] = [];
+    for (const [file, content] of WorkspaceFiles.contentsOf(files)) {
+      try {
+        writeFileSync(file, content);
+      } catch (error) {
+        errors.push(error);
+      }
+    }
+    this.root.refresh();
+    if (errors.length > 0) {
+      throw errors[0];
+    }
   }
 }
 

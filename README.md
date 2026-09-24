@@ -216,11 +216,13 @@ js-project publish [--package-manager <yarn|npm|pnpm>]
    - `release`: For releases that are older than the last tagged version
    - `snapshot`: For SNAPSHOTs that are older than the last tagged version
 4. Publishes with: `<package-manager> publish --ignore-scripts --non-interactive [--registry <url>] --tag <tag>`
-5. Restores original version in package.json (for SNAPSHOT publishes)
+5. Restores the original content of package.json (for SNAPSHOT publishes), also when publishing fails
 
 **Use case**: Typically called as part of the `release` command, but can be used independently to publish without version changes.
 
-**Private packages**: If the root `package.json` is marked `"private": true`, the package is not published. `publish` logs `Skipping publish of private package "<name>"` and succeeds, so a `release` on such a repository still commits, tags and pushes, and publishers queued after the Node publisher (e.g. in `js-ies-module`) still run.
+In a pnpm workspace, `publish` publishes all public workspace packages at once, see [Publishing a monorepo](#publishing-a-monorepo).
+
+**Private packages**: If the root `package.json` of a single-package repository is marked `"private": true`, the package is not published. `publish` logs `Skipping publish of private package "<name>"` and succeeds, so a `release` on such a repository still commits, tags and pushes, and publishers queued after the Node publisher (e.g. in `js-ies-module`) still run.
 
 ---
 
@@ -240,6 +242,23 @@ The workspace packages are the directories matched by the `packages:` globs, res
 **pnpm only**: Monorepo mode currently requires pnpm. If a workspace is detected and the package manager is `npm` or `yarn` (via `--package-manager` or `JS_PROJECT_PACKAGE_MANAGER`), `verifyRelease`, `startHotfix`, `release` and `publish` fail with `Monorepo mode currently requires pnpm ...`. A workspace declared only by the `workspaces` field in `package.json` is rejected with pnpm too, because pnpm ignores that field; declare the packages in `pnpm-workspace.yaml` instead.
 
 **Run from the workspace root**: All commands must be run from the workspace root. Running any command from a subdirectory of a workspace (e.g. `packages/a`) fails with an error that names the workspace root to change to. The search for an enclosing workspace stops at the root of the git repository.
+
+### Publishing a monorepo
+
+`publish` (and the publish step of `release`, also when driven by `js-ies-module --publishNode`) publishes the workspace with **fixed (lockstep) versions**:
+
+1. The publish version is computed from the root version exactly as for a single package: the release version, or for SNAPSHOTs the timestamped version (with the feature branch identifier on feature branches, e.g. `1.2.0-SNAPSHOT.20260119123045.my-feature`).
+2. That version is written into the root and **every** workspace `package.json`, private or not. Packages whose version has drifted from the root are synced as well.
+3. A single `pnpm -r publish --ignore-scripts --no-git-checks [--registry <url>] --tag <tag>` runs from the workspace root. The dist-tag and the registry (`JS_PROJECT_SNAPSHOT_REGISTRY` / `JS_PROJECT_RELEASE_REGISTRY`) are determined as for a single package and apply to every published package.
+4. Every `package.json` is restored to its exact previous content afterwards, also when publishing fails.
+
+**Which packages are published**: every workspace package that is not marked `"private": true`. To publish a package, remove its `private` flag. pnpm publishes them in dependency order. The workspace root is published too if it is not private (pnpm's recursive publish includes a non-private root, so it is published exactly once); a private root is skipped with `Skipping publish of private package "<name>"`. If every package is private, nothing is published and `publish` succeeds.
+
+**`workspace:` dependencies**: pnpm replaces `workspace:*` / `workspace:^` / `workspace:~` specifiers with the versions written in step 2, so a published SNAPSHOT depends on the exact timestamped sibling versions that were published alongside it, and a release depends on the same release version. The workspace must be installed (`pnpm install`) before publishing.
+
+**Re-running a failed publish**: pnpm skips package versions that already exist in the registry. Re-running a failed release therefore publishes only the packages that are still missing. A re-run SNAPSHOT publish gets a new timestamp and publishes all packages again.
+
+**Registry precedence**: a scoped registry in `.npmrc` (`@scope:registry=...`) or a `publishConfig.registry` in a package manifest takes precedence over `--registry` for that package (pnpm behaviour).
 
 ---
 
