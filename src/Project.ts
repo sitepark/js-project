@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { Git } from "./Git.js";
 import type { PackageJson } from "./PackageJson.js";
+import type { DependencySection } from "./Workspace.js";
 
 import { BranchType } from "./BranchType.js";
 import {
@@ -11,12 +12,6 @@ import {
   isSnapshot,
   releaseVersion,
 } from "./version.js";
-
-type DependencyType =
-  | "dependencies"
-  | "devDependencies"
-  | "optionalDependencies"
-  | "peerDependencies";
 
 export interface DependencyInfo {
   name: string;
@@ -222,7 +217,7 @@ export class Project {
    * @returns
    */
   public getSnapshotDependencies(
-    type: DependencyType = "dependencies",
+    type: DependencySection = "dependencies",
   ): DependencyInfo[] {
     const snapshots: DependencyInfo[] = [];
     if (!Object.hasOwn(this.pkg, type)) {

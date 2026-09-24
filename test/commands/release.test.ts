@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { releaseCommand } from "../../src/commands/release.js";
 import { ReleaseManagementFactory } from "../../src/ReleaseManagementFactory.js";
 
-vi.mock("../../src/Project.js", () => ({
-  Project: { forCwd: vi.fn(() => ({})) },
+vi.mock("../../src/Workspace.js", () => ({
+  Workspace: { forCwd: vi.fn(() => ({ getRoot: () => ({}) })) },
 }));
 vi.mock("../../src/BuildProvider.js", () => ({
   BuildProvider: vi.fn(),
