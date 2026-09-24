@@ -2,7 +2,6 @@ import { exit } from "node:process";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { BuildProvider } from "../src/BuildProvider.js";
 import { NodePublisherProvider } from "../src/NodePublisherProvider.js";
-import type { PackageJson } from "../src/PackageJson.js";
 import { Project } from "../src/Project.js";
 import { ReleaseManagementFactory } from "../src/ReleaseManagementFactory.js";
 import { VerificationReport } from "../src/VerificationReport.js";
@@ -28,6 +27,11 @@ const SECTIONS = [
   "optionalDependencies",
 ] as const;
 
+/** the dependency sections of a fixture `package.json` */
+type Dependencies = Partial<
+  Record<(typeof SECTIONS)[number], Record<string, string>>
+>;
+
 /** `verifyRelease()` through the public API used by the CLI and js-ies-module */
 function verifyRelease(): VerificationReport {
   const project = Project.forCwd();
@@ -43,7 +47,7 @@ function verifyFixture(definition: FixtureDefinition): VerificationReport {
   return verifyRelease();
 }
 
-function singlePackage(pkg: Partial<PackageJson> = {}): FixtureDefinition {
+function singlePackage(pkg: Dependencies = {}): FixtureDefinition {
   return { root: { name: "single", version: "1.0.0-SNAPSHOT", ...pkg } };
 }
 
@@ -52,7 +56,7 @@ function singlePackage(pkg: Partial<PackageJson> = {}): FixtureDefinition {
  * so `a` may depend on `b` without failing the private-sibling check)
  */
 function monorepo(
-  packages: { a?: Partial<PackageJson>; b?: Partial<PackageJson> } = {},
+  packages: { a?: Dependencies; b?: Dependencies } = {},
   workspace: FixtureDefinition["workspace"] = { packages: ["packages/*"] },
 ): FixtureDefinition {
   return {
