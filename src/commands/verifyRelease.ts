@@ -22,4 +22,7 @@ export function verifyReleaseCommand(
     console.log(report.toString());
     exit(1);
   }
+  if (report.hasInformation()) {
+    console.log(report.toString());
+  }
 }

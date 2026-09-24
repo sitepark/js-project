@@ -74,6 +74,9 @@ js-project releaseVersion
 Verifies that the project is ready for a release by checking:
 
 - No SNAPSHOT dependencies in `dependencies`, `devDependencies`, or `peerDependencies`
+- In a monorepo: no public package depends on a private workspace package at runtime (see [Monorepos](#monorepos-pnpm-workspaces))
+
+In a monorepo it also reports, as information only, workspace packages whose version differs from the root version.
 
 Registries are not part of the verification; they are configured exclusively via environment variables (see [Registry Configuration](#registry-configuration)).
 
@@ -240,6 +243,11 @@ The workspace packages are the directories matched by the `packages:` globs, res
 **pnpm only**: Monorepo mode currently requires pnpm. If a workspace is detected and the package manager is `npm` or `yarn` (via `--package-manager` or `JS_PROJECT_PACKAGE_MANAGER`), `verifyRelease`, `startHotfix`, `release` and `publish` fail with `Monorepo mode currently requires pnpm ...`. A workspace declared only by the `workspaces` field in `package.json` is rejected with pnpm too, because pnpm ignores that field; declare the packages in `pnpm-workspace.yaml` instead.
 
 **Run from the workspace root**: All commands must be run from the workspace root. Running any command from a subdirectory of a workspace (e.g. `packages/a`) fails with an error that names the workspace root to change to. The search for an enclosing workspace stops at the root of the git repository.
+
+**Verification rules** (`verifyRelease`):
+
+- **Public packages must not depend on private siblings (failure)**: a non-private workspace package (or a non-private root) that lists a private workspace package in `dependencies` or `peerDependencies` fails the verification. Published, it would point at a version that doesn't exist on any registry, so consumers couldn't install it. The report names both packages, e.g. `@acme/lib -> @acme/utils (dependencies: workspace:*)`. Private siblings in `devDependencies` are allowed (e.g. shared private test utilities), and private packages may depend on private siblings.
+- **Version drift (information)**: workspace packages whose version differs from the root version are listed as information. This does not fail the verification, because `release`, `startHotfix` and `publish` always write the root version into every package, so the drift heals itself (e.g. the first release of a repository whose packages still sit at `0.0.0`). `verifyRelease` prints the list and exits with `0` if there are no failures.
 
 ---
 

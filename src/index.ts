@@ -13,6 +13,11 @@ export {
 export { ReleaseManagement } from "./ReleaseManagement.js";
 export { ReleaseManagementFactory } from "./ReleaseManagementFactory.js";
 export { BranchType } from "./BranchType.js";
+export type {
+  PrivateSiblingDependency,
+  RuntimeDependencySection,
+  VersionDrift,
+} from "./VerificationReport.js";
 export {
   Workspace,
   type DependencySection,

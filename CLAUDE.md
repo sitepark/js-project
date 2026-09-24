@@ -83,7 +83,7 @@ The architecture follows a clean separation of concerns with provider pattern fo
 
 **Supporting Classes:**
 
-- `VerificationReport` - Analyzes project for release readiness (checks for SNAPSHOT dependencies)
+- `VerificationReport` - Analyzes project for release readiness (checks for SNAPSHOT dependencies; in a monorepo fails on public packages with a private sibling in `dependencies`/`peerDependencies` and reports version drift from the root as information only)
 - `ReleaseManagementFactory` - Factory for creating ReleaseManagement instances with providers
 - `PackageJson` - TypeScript interface for package.json structure
 
