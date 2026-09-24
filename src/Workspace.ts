@@ -44,22 +44,37 @@ export class WorkspaceFiles {
 export class WorkspacePackage {
   private readonly manifestPath: string;
   private readonly manifest: PackageJson;
-  private readonly root: boolean;
+  /** package directory relative to the workspace root, `/`-separated */
+  private readonly relativeDir: string;
 
-  /** @internal packages are created by {@link Workspace} only */
-  constructor(manifestPath: string, manifest: PackageJson, root: boolean) {
+  /**
+   * @internal packages are created by {@link Workspace} only
+   * @param rootDir directory of the workspace root
+   */
+  constructor(manifestPath: string, manifest: PackageJson, rootDir: string) {
     this.manifestPath = manifestPath;
     this.manifest = manifest;
-    this.root = root;
+    this.relativeDir = path
+      .relative(rootDir, path.dirname(manifestPath))
+      .split(path.sep)
+      .join("/");
   }
 
   /** `true` for the root package of the workspace */
   public isRoot(): boolean {
-    return this.root;
+    return this.relativeDir === "";
   }
 
   public getName(): string | undefined {
     return this.manifest.name;
+  }
+
+  /**
+   * The name of the package, or its directory relative to the workspace root
+   * if it has no name (`.` for the root).
+   */
+  public getDisplayName(): string {
+    return this.getName() ?? (this.relativeDir || ".");
   }
 
   public getVersion(): string | undefined {
@@ -89,6 +104,16 @@ export class WorkspacePackage {
   /** absolute path of the package's `package.json` */
   public getPackagePath(): string {
     return this.manifestPath;
+  }
+
+  /**
+   * path of the package's `package.json` relative to the workspace root,
+   * `/`-separated (e.g. `package.json`, `packages/a/package.json`)
+   */
+  public getRelativePackagePath(): string {
+    return this.relativeDir === ""
+      ? "package.json"
+      : `${this.relativeDir}/package.json`;
   }
 
   /** absolute path of the package directory */
@@ -148,7 +173,11 @@ export class Workspace {
     this.root = root;
     this.definition = definition;
     this.packages = [
-      new WorkspacePackage(root.getPackagePath(), root.getPackageJson(), true),
+      new WorkspacePackage(
+        root.getPackagePath(),
+        root.getPackageJson(),
+        root.getBasePath(),
+      ),
       ...(definition ? discoverPackages(root, definition) : []),
     ];
   }
@@ -236,10 +265,7 @@ export class Workspace {
    * repository returns `["package.json"]`.
    */
   public getPackageJsonPaths(): string[] {
-    const rootDir = this.root.getBasePath();
-    return this.packages.map((pkg) =>
-      path.relative(rootDir, pkg.getPackagePath()).split(path.sep).join("/"),
-    );
+    return this.packages.map((pkg) => pkg.getRelativePackagePath());
   }
 
   /**
@@ -439,7 +465,7 @@ function discoverPackages(
           "package.yaml and package.json5 manifests are not supported.",
       );
     }
-    return new WorkspacePackage(manifestPath, readJson(manifestPath), false);
+    return new WorkspacePackage(manifestPath, readJson(manifestPath), rootDir);
   });
 }
 

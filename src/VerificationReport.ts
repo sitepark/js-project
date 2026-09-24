@@ -1,4 +1,3 @@
-import path from "node:path";
 import type { DependencySection } from "./PackageJson.js";
 import type { DependencyInfo, Project } from "./Project.js";
 import { Workspace, type WorkspacePackage } from "./Workspace.js";
@@ -171,10 +170,9 @@ export class VerificationReport {
   getSnapshotDependencies(): SnapshotDependency[] {
     if (this.snapshotDependencies === undefined) {
       const workspace = this.getWorkspace();
-      const rootDir = workspace.getRoot().getBasePath();
       this.snapshotDependencies = workspace
         .getPackages()
-        .flatMap((pkg) => findSnapshotDependencies(workspace, rootDir, pkg));
+        .flatMap((pkg) => findSnapshotDependencies(workspace, pkg));
     }
     return [...this.snapshotDependencies];
   }
@@ -265,7 +263,7 @@ export class VerificationReport {
         )) {
           if (privateSiblings.has(dependency) && dependency !== pkg.getName()) {
             result.push({
-              package: this.displayName(pkg),
+              package: pkg.getDisplayName(),
               dependency,
               section,
               versionRange,
@@ -312,7 +310,7 @@ export class VerificationReport {
     return packages
       .filter((pkg) => !pkg.isRoot() && pkg.getVersion() !== rootVersion)
       .map((pkg) => ({
-        package: this.displayName(pkg),
+        package: pkg.getDisplayName(),
         version: pkg.getVersion(),
         rootVersion,
       }));
@@ -333,28 +331,14 @@ export class VerificationReport {
       "release, startHotfix and publish set every package to the root version."
     );
   }
-
-  /** package name, or the package path relative to the root if unnamed */
-  private displayName(pkg: WorkspacePackage): string {
-    return (
-      pkg.getName() ??
-      path.relative(
-        this.getWorkspace().getRoot().getBasePath(),
-        pkg.getBasePath(),
-      )
-    );
-  }
 }
 
 function findSnapshotDependencies(
   workspace: Workspace,
-  rootDir: string,
   pkg: WorkspacePackage,
 ): SnapshotDependency[] {
-  const packagePath = toPosix(path.relative(rootDir, pkg.getPackagePath()));
-  const packageName =
-    pkg.getName() ??
-    (toPosix(path.relative(rootDir, pkg.getBasePath())) || ".");
+  const packagePath = pkg.getRelativePackagePath();
+  const packageName = pkg.getDisplayName();
   const snapshots: SnapshotDependency[] = [];
   for (const section of SNAPSHOT_SECTIONS) {
     const dependencies = pkg.getDependencies(section);
@@ -400,8 +384,4 @@ function groupBy<T, K>(items: readonly T[], key: (item: T) => K): Map<K, T[]> {
     }
   }
   return groups;
-}
-
-function toPosix(file: string): string {
-  return file.split(path.sep).join("/");
 }

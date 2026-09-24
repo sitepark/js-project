@@ -193,6 +193,43 @@ describe("VerificationReport workspace rules", () => {
     });
   });
 
+  describe("unnamed packages", () => {
+    it("should be named the same way in every section of the report", () => {
+      createFixture({
+        root: {
+          version: VERSION,
+          dependencies: { "@acme/utils": "workspace:*", ext: "1.0.0-SNAPSHOT" },
+        },
+        workspace: { packages: ["packages/**"] },
+        packages: {
+          "packages/utils": privateUtils,
+          "packages/nested/x": {
+            dependencies: { ext: "1.0.0-SNAPSHOT" },
+          },
+        },
+      });
+
+      const report = verifyReleaseForCwd();
+
+      expect(
+        report.getSnapshotDependencies().map((d) => d.packageName),
+      ).toEqual([".", "packages/nested/x"]);
+      expect(
+        report.getPrivateSiblingDependencies().map((d) => d.package),
+      ).toEqual(["."]);
+      expect(report.getVersionDrift().map((d) => d.package)).toEqual([
+        "packages/nested/x",
+      ]);
+      const message = report.toString();
+      expect(message).toContain(". (package.json):");
+      expect(message).toContain(
+        "packages/nested/x (packages/nested/x/package.json):",
+      );
+      expect(message).toContain("\t. -> @acme/utils");
+      expect(message).toContain("\tpackages/nested/x - (none)");
+    });
+  });
+
   describe("version drift", () => {
     it("should list packages whose version differs from the root as information", () => {
       createFixture(
