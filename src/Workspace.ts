@@ -1,8 +1,8 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { globSync } from "tinyglobby";
 import { parse as parseYaml } from "yaml";
-import type { PackageJson } from "./PackageJson.js";
+import { type PackageJson, serializePackageJson } from "./PackageJson.js";
 import { Project } from "./Project.js";
 import type { SupportedPackageManager } from "./packageManager.js";
 
@@ -153,6 +153,42 @@ export class Workspace {
    */
   public getPackages(): readonly WorkspacePackage[] {
     return this.packages;
+  }
+
+  /**
+   * Writes `version` into the root `package.json` and into the `package.json`
+   * of every workspace package, private or not (fixed / lockstep
+   * versioning). The root is written through {@link Project.updateVersion},
+   * so the in-memory root `Project` stays in sync. Workspace packages are
+   * re-read from disk, so only their `version` changes; all other keys stay
+   * untouched. Every file is written with 2-space indentation and a trailing
+   * newline.
+   */
+  public writeVersion(version: string): void {
+    this.root.updateVersion(version);
+    for (const pkg of this.packages) {
+      if (pkg.isRoot()) {
+        continue;
+      }
+      const manifestPath = pkg.getPackagePath();
+      const manifest = readJson(manifestPath);
+      manifest.version = version;
+      writeFileSync(manifestPath, serializePackageJson(manifest), "utf8");
+      pkg.getPackageJson().version = version;
+    }
+  }
+
+  /**
+   * The `package.json` paths a version change touches, relative to the
+   * workspace root with `/` separators, root first
+   * (e.g. `package.json`, `packages/a/package.json`). A single-package
+   * repository returns `["package.json"]`.
+   */
+  public getPackageJsonPaths(): string[] {
+    const rootDir = this.root.getBasePath();
+    return this.packages.map((pkg) =>
+      path.relative(rootDir, pkg.getPackagePath()).split(path.sep).join("/"),
+    );
   }
 }
 
