@@ -2,6 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DependencyInfo, Project } from "../src/Project.js";
 import { VerificationReport } from "../src/VerificationReport.js";
 
+// These tests cover the SNAPSHOT check with a hand-built Project. The
+// workspace-wide checks are covered by VerificationReport.workspace*.test.ts;
+// here the project is treated as a workspace without other packages.
+vi.mock("../src/Workspace.js", () => ({
+  Workspace: { forProject: () => ({ getPackages: () => [] }) },
+}));
+
 describe("VerificationReport", () => {
   let mockProject: Project;
 
