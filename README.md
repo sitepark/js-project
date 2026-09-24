@@ -74,7 +74,8 @@ js-project releaseVersion
 Verifies that the project is ready for a release by checking:
 
 - No SNAPSHOT dependencies in `dependencies`, `devDependencies`, or `peerDependencies`
-- Valid `publishConfig.registry` is configured in package.json
+
+Registries are not part of the verification; they are configured exclusively via environment variables (see [Registry Configuration](#registry-configuration)).
 
 ```bash
 js-project verifyRelease [--package-manager <yarn|npm|pnpm>]
@@ -257,7 +258,7 @@ export JS_PROJECT_RELEASE_REGISTRY=https://my-release-registry.com
 - **JS_PROJECT_SNAPSHOT_REGISTRY**: Used when publishing SNAPSHOT versions (if not set, uses default npm registry)
 - **JS_PROJECT_RELEASE_REGISTRY**: Used when publishing release versions (if not set, uses default npm registry)
 
-**Note**: The `publishConfig.registry` field in package.json is still validated by `verifyRelease` to ensure publishing is properly configured, but the actual registry URL used during publish comes from these environment variables.
+**Note**: These environment variables are the only way to configure the registry. `js-project` does not read any registry settings from `package.json` (`publishConfig.registry`, `publishConfig.snapshotRegistry`, `publishConfig.releaseRegistry`), and `verifyRelease` does not check them.
 
 ### Installing SNAPSHOT Versions
 

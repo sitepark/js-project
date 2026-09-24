@@ -82,7 +82,7 @@ The architecture follows a clean separation of concerns with provider pattern fo
 
 **Supporting Classes:**
 
-- `VerificationReport` - Analyzes project for release readiness (checks for SNAPSHOT dependencies, publishConfig)
+- `VerificationReport` - Analyzes project for release readiness (checks for SNAPSHOT dependencies)
 - `ReleaseManagementFactory` - Factory for creating ReleaseManagement instances with providers
 - `PackageJson` - TypeScript interface for package.json structure
 
@@ -133,11 +133,13 @@ Hotfix workflow:
 
 - For SNAPSHOT: appends timestamp to version
 - Determines npm dist-tag: `latest` for releases, `next` for newer SNAPSHOTs
-- Supports custom registries via `publishConfig.registry`, `publishConfig.snapshotRegistry`, `publishConfig.releaseRegistry`
+- Registries are configured exclusively via the `JS_PROJECT_SNAPSHOT_REGISTRY` / `JS_PROJECT_RELEASE_REGISTRY` environment variables (no `publishConfig` registry support)
 
 ### Environment Variables
 
 - `JS_PROJECT_PACKAGE_MANAGER` - Default package manager when not specified via CLI (defaults to pnpm)
+- `JS_PROJECT_SNAPSHOT_REGISTRY` - Registry used when publishing SNAPSHOT versions (default npm registry if unset)
+- `JS_PROJECT_RELEASE_REGISTRY` - Registry used when publishing release versions (default npm registry if unset)
 
 ## TypeScript Configuration
 

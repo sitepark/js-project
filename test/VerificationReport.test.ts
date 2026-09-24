@@ -7,7 +7,6 @@ describe("VerificationReport", () => {
 
   beforeEach(() => {
     mockProject = {
-      hasPublishConfig: vi.fn(),
       getSnapshotDependencies: vi.fn(),
     } as unknown as Project;
   });
@@ -66,33 +65,53 @@ describe("VerificationReport", () => {
     });
   });
 
-  describe("isPublishable", () => {
-    it("should return true when publishConfig exists", () => {
-      vi.mocked(mockProject.hasPublishConfig).mockReturnValue(true);
+  describe("hasFailures", () => {
+    it("should return true when SNAPSHOT dependencies exist", () => {
+      vi.mocked(mockProject.getSnapshotDependencies).mockImplementation(
+        (type) =>
+          type === "dependencies"
+            ? [{ name: "@sitepark/test", versionRange: "^1.0.0-SNAPSHOT" }]
+            : [],
+      );
 
       const report = new VerificationReport(mockProject);
-      expect(report.isPublishable()).toBe(true);
+      expect(report.hasFailures()).toBe(true);
     });
 
-    it("should return true when publishConfig is missing", () => {
-      vi.mocked(mockProject.hasPublishConfig).mockReturnValue(false);
-
-      const report = new VerificationReport(mockProject);
-      expect(report.isPublishable()).toBe(true);
-    });
-  });
-
-  describe("isReleaseable", () => {
-    it("should return true when publishable and no SNAPSHOT dependencies", () => {
-      vi.mocked(mockProject.hasPublishConfig).mockReturnValue(true);
+    it("should return false when no SNAPSHOT dependencies exist", () => {
       vi.mocked(mockProject.getSnapshotDependencies).mockReturnValue([]);
 
       const report = new VerificationReport(mockProject);
-      expect(report.isReleaseable()).toBe(true);
+      expect(report.hasFailures()).toBe(false);
+    });
+  });
+
+  describe("isPublishable", () => {
+    it("should return true when the report has no failures", () => {
+      vi.mocked(mockProject.getSnapshotDependencies).mockReturnValue([]);
+
+      const report = new VerificationReport(mockProject);
+      expect(report.isPublishable()).toBe(true);
     });
 
-    it("should return true when publishable is always true and no SNAPSHOT dependencies", () => {
-      vi.mocked(mockProject.hasPublishConfig).mockReturnValue(false);
+    it.each(["dependencies", "devDependencies", "peerDependencies"])(
+      "should return false when %s have SNAPSHOT versions",
+      (section) => {
+        vi.mocked(mockProject.getSnapshotDependencies).mockImplementation(
+          (type) =>
+            type === section
+              ? [{ name: "@sitepark/test", versionRange: "^1.0.0-SNAPSHOT" }]
+              : [],
+        );
+
+        const report = new VerificationReport(mockProject);
+        expect(report.isPublishable()).toBe(false);
+      },
+    );
+  });
+
+  describe("isReleaseable", () => {
+    it("should return true when there are no SNAPSHOT dependencies", () => {
       vi.mocked(mockProject.getSnapshotDependencies).mockReturnValue([]);
 
       const report = new VerificationReport(mockProject);
@@ -100,7 +119,6 @@ describe("VerificationReport", () => {
     });
 
     it("should return false when has SNAPSHOT dependencies", () => {
-      vi.mocked(mockProject.hasPublishConfig).mockReturnValue(true);
       vi.mocked(mockProject.getSnapshotDependencies).mockImplementation(
         (type) => {
           if (type === "dependencies")
@@ -147,18 +165,16 @@ describe("VerificationReport", () => {
   });
 
   describe("toString", () => {
-    it("should return error message when something went wrong", () => {
-      vi.mocked(mockProject.hasPublishConfig).mockReturnValue(false);
+    it("should report no problems when there are no failures", () => {
       vi.mocked(mockProject.getSnapshotDependencies).mockReturnValue([]);
 
       const report = new VerificationReport(mockProject);
       const message = report.toString();
 
-      expect(message).toBe("Something went wrong");
+      expect(message).toBe("No problems found.");
     });
 
     it("should return SNAPSHOT dependencies message when has snapshots", () => {
-      vi.mocked(mockProject.hasPublishConfig).mockReturnValue(true);
       vi.mocked(mockProject.getSnapshotDependencies).mockImplementation(
         (type) => {
           if (type === "dependencies")
@@ -180,7 +196,6 @@ describe("VerificationReport", () => {
 
   describe("toJson", () => {
     it("should return JSON with all dependency info and flags", () => {
-      vi.mocked(mockProject.hasPublishConfig).mockReturnValue(true);
       vi.mocked(mockProject.getSnapshotDependencies).mockImplementation(
         (type) => {
           if (type === "dependencies")
@@ -200,7 +215,7 @@ describe("VerificationReport", () => {
       expect(parsed).toHaveProperty("peerDependencies");
       expect(parsed).toHaveProperty("isPublishable");
       expect(parsed).toHaveProperty("isReleasable");
-      expect(parsed.isPublishable).toBe(true);
+      expect(parsed.isPublishable).toBe(false);
       expect(parsed.isReleasable).toBe(false);
     });
   });
