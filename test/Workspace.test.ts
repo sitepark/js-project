@@ -441,4 +441,85 @@ describe("Workspace", () => {
       expect(() => Workspace.forCwd().getCatalogs()).toThrow('"catalog" in');
     });
   });
+
+  describe("writing versions", () => {
+    const definition = {
+      root,
+      workspace: { packages: ["packages/**"] },
+      packages: {
+        "packages/b": { name: "b", version: "0.0.0", private: true },
+        "packages/nested/a": {
+          name: "a",
+          version: "1.2.0-SNAPSHOT",
+          dependencies: { b: "workspace:*" },
+        },
+      },
+    };
+
+    it("should list the package.json paths, root first", () => {
+      createFixture(definition);
+
+      expect(Workspace.forCwd().getPackageJsonPaths()).toEqual([
+        "package.json",
+        "packages/b/package.json",
+        "packages/nested/a/package.json",
+      ]);
+    });
+
+    it("should list only the root package.json of a single-package repository", () => {
+      createFixture({ root });
+
+      expect(Workspace.forCwd().getPackageJsonPaths()).toEqual([
+        "package.json",
+      ]);
+    });
+
+    it("should write the version into every package.json and keep the root project in sync", () => {
+      const fixture = createFixture(definition);
+      const workspace = Workspace.forCwd();
+
+      workspace.writeVersion("1.2.0");
+
+      expect(workspace.getRoot().getVersion()).toBe("1.2.0");
+      expect(fixture.readJson()).toEqual({ ...root, version: "1.2.0" });
+      expect(fixture.readJson("packages/b")).toEqual({
+        name: "b",
+        version: "1.2.0",
+        private: true,
+      });
+      expect(fixture.readFile("packages/nested/a/package.json")).toBe(
+        `${JSON.stringify(
+          {
+            name: "a",
+            version: "1.2.0",
+            dependencies: { b: "workspace:*" },
+          },
+          null,
+          2,
+        )}\n`,
+      );
+    });
+
+    it("should restore the captured bytes of every package.json", () => {
+      const original = '{"name":"b","version":"0.0.0","private":true}\r\n';
+      const fixture = createFixture({
+        ...definition,
+        files: { "packages/b/package.json": original },
+      });
+      const workspace = Workspace.forCwd();
+      const before = workspace
+        .getPackageJsonPaths()
+        .map((file) => fixture.readFile(file));
+
+      const files = workspace.captureFiles();
+      workspace.writeVersion("9.9.9");
+      workspace.restoreFiles(files);
+
+      expect(
+        workspace.getPackageJsonPaths().map((file) => fixture.readFile(file)),
+      ).toEqual(before);
+      expect(fixture.readFile("packages/b/package.json")).toBe(original);
+      expect(workspace.getRoot().getVersion()).toBe("1.2.0-SNAPSHOT");
+    });
+  });
 });

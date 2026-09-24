@@ -22,6 +22,25 @@ export interface WorkspaceOptions {
 }
 
 /**
+ * The raw contents of every `package.json` of a workspace, as returned by
+ * {@link Workspace.captureFiles}. Opaque: pass it to
+ * {@link Workspace.restoreFiles} to write exactly these bytes back.
+ */
+export class WorkspaceFiles {
+  readonly #contents: ReadonlyMap<string, Buffer>;
+
+  /** @internal created by {@link Workspace.captureFiles} only */
+  constructor(contents: ReadonlyMap<string, Buffer>) {
+    this.#contents = contents;
+  }
+
+  /** @internal */
+  static contentsOf(files: WorkspaceFiles): ReadonlyMap<string, Buffer> {
+    return files.#contents;
+  }
+}
+
+/**
  * A package of a {@link Workspace}: the root package or one of the packages
  * matched by the workspace globs. A read-only view of its `package.json`.
  */
@@ -224,6 +243,55 @@ export class Workspace {
     return this.packages.map((pkg) =>
       path.relative(rootDir, pkg.getPackagePath()).split(path.sep).join("/"),
     );
+  }
+
+  /**
+   * Saves the raw contents of every `package.json` listed by
+   * {@link getPackageJsonPaths}, to be written back by {@link restoreFiles}.
+   */
+  public captureFiles(): WorkspaceFiles {
+    return new WorkspaceFiles(
+      new Map(
+        this.packages.map((pkg) => [
+          pkg.getPackagePath(),
+          readFileSync(pkg.getPackagePath()),
+        ]),
+      ),
+    );
+  }
+
+  /**
+   * Writes back exactly the bytes saved by {@link captureFiles} and re-reads
+   * the root {@link Project} and the cached versions of the workspace
+   * packages. Every file is attempted even if one fails; the first error is
+   * rethrown afterwards.
+   */
+  public restoreFiles(files: WorkspaceFiles): void {
+    const errors: unknown[] = [];
+    for (const [file, content] of WorkspaceFiles.contentsOf(files)) {
+      try {
+        writeFileSync(file, content);
+      } catch (error) {
+        errors.push(error);
+      }
+    }
+    this.root.refresh();
+    // writeVersion() updates the cached versions of the workspace packages
+    for (const pkg of this.packages) {
+      if (pkg.isRoot()) {
+        continue;
+      }
+      const manifest = pkg.getPackageJson();
+      const { version } = readJson(pkg.getPackagePath());
+      if (version === undefined) {
+        delete manifest.version;
+      } else {
+        manifest.version = version;
+      }
+    }
+    if (errors.length > 0) {
+      throw errors[0];
+    }
   }
 }
 

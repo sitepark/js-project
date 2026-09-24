@@ -27,6 +27,7 @@ export {
   Workspace,
   type Catalogs,
   type DependencySection,
+  type WorkspaceFiles,
   type WorkspaceOptions,
   type WorkspacePackage,
 } from "./Workspace.js";
