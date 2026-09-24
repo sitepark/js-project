@@ -288,6 +288,9 @@ describe("NodePublisherProvider.publish() in a pnpm workspace", () => {
       "pnpm -r publish --ignore-scripts --no-git-checks --tag next",
     ]);
     expect(console.log).toHaveBeenCalledWith(
+      'The workspace root "root" is private and not published; publishing the public workspace packages',
+    );
+    expect(console.log).not.toHaveBeenCalledWith(
       'Skipping publish of private package "root"',
     );
   });
