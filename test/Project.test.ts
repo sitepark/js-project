@@ -153,6 +153,55 @@ describe("Project", () => {
     });
   });
 
+  describe("getSnapshotDependencies", () => {
+    it("should find SNAPSHOT dependencies", () => {
+      packageJson.dependencies = {
+        "@sitepark/test": "^1.0.0-SNAPSHOT",
+        "regular-dep": "^2.0.0",
+      };
+      const project = new Project(packageJson, "/test/package.json", mockGit);
+      const snapshots = project.getSnapshotDependencies("dependencies");
+
+      expect(snapshots).toHaveLength(1);
+      expect(snapshots[0]).toEqual({
+        name: "@sitepark/test",
+        versionRange: "^1.0.0-SNAPSHOT",
+      });
+    });
+
+    it("should find SNAPSHOT devDependencies", () => {
+      packageJson.devDependencies = {
+        "@sitepark/test-dev": "^1.0.0-SNAPSHOT",
+        "regular-dev": "^2.0.0",
+      };
+      const project = new Project(packageJson, "/test/package.json", mockGit);
+      const snapshots = project.getSnapshotDependencies("devDependencies");
+
+      expect(snapshots).toHaveLength(1);
+      expect(snapshots[0]).toEqual({
+        name: "@sitepark/test-dev",
+        versionRange: "^1.0.0-SNAPSHOT",
+      });
+    });
+
+    it("should return empty array when no SNAPSHOT dependencies", () => {
+      packageJson.dependencies = {
+        "regular-dep": "^2.0.0",
+      };
+      const project = new Project(packageJson, "/test/package.json", mockGit);
+      const snapshots = project.getSnapshotDependencies("dependencies");
+
+      expect(snapshots).toHaveLength(0);
+    });
+
+    it("should return empty array when dependency type does not exist", () => {
+      const project = new Project(packageJson, "/test/package.json", mockGit);
+      const snapshots = project.getSnapshotDependencies("peerDependencies");
+
+      expect(snapshots).toHaveLength(0);
+    });
+  });
+
   describe("hasScript", () => {
     it("should return true when script exists", () => {
       packageJson.scripts = {
