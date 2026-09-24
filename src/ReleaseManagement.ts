@@ -57,13 +57,16 @@ export class ReleaseManagement {
     }
 
     const lastReleaseVersion =
-      releaseVersions[releaseVersions.length - 1] ?? `${minor}.${minor}.0`;
+      releaseVersions[releaseVersions.length - 1] ?? `${major}.${minor}.0`;
     const hotfixSnapshotVersion = `${incrementPatchVersion(lastReleaseVersion)}-SNAPSHOT`;
 
     console.log(`hotfixSnapshotVersion: ${hotfixSnapshotVersion}`);
 
     const hotfixBranch = `hotfix/${major}.${minor}.x`;
     this.git.createBranch(hotfixBranch, lastReleaseVersion);
+    // The checkout replaced package.json with the content of the base tag.
+    // Re-read it so the new version is written on top of that content.
+    this.project.refresh();
     this.project.updateVersion(hotfixSnapshotVersion);
     this.buildProvider.formatPackageJson();
 

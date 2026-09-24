@@ -206,14 +206,6 @@ export class Project {
   }
 
   /**
-   * Indicates whether this package has valid publishConfig
-   * @returns
-   */
-  public hasPublishConfig(): boolean {
-    return !!this.pkg.publishConfig?.registry;
-  }
-
-  /**
    * Returns a list of dependencies that have a
    * SNAPSHOT version.
    *

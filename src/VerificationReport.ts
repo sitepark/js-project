@@ -22,12 +22,23 @@ export class VerificationReport {
     );
   }
 
-  isReleaseable(): boolean {
-    return !this.hasSnapshotDependencies() && this.isPublishable();
+  /**
+   * Indicates whether any verification check failed.
+   */
+  hasFailures(): boolean {
+    return this.hasSnapshotDependencies();
   }
 
+  isReleaseable(): boolean {
+    return this.isPublishable();
+  }
+
+  /**
+   * Returns `false` whenever the report contains failures
+   * (e.g. SNAPSHOT dependencies), `true` otherwise.
+   */
   isPublishable(): boolean {
-    return true;
+    return !this.hasFailures();
   }
 
   generateDependecyInfo(): DependencyReport {
@@ -52,9 +63,6 @@ export class VerificationReport {
   }
 
   toString(): string {
-    if (!this.isPublishable()) {
-      return 'Project is missing a publishConfig. Please define a registry."';
-    }
     if (this.hasSnapshotDependencies()) {
       const depReport = Object.entries(this.generateDependecyInfo())
         .filter(([type, snapshots]) => snapshots.length > 0)
@@ -71,6 +79,6 @@ export class VerificationReport {
       return `Snapshot-Version detected:\n\n${depReport}`;
     }
 
-    return "Something went wrong";
+    return "No problems found.";
   }
 }

@@ -115,9 +115,9 @@ yargs(hideBin(process.argv))
         demandOption: false,
       });
     },
-    (argv) => {
+    async (argv) => {
       try {
-        releaseCommand(parsePackageManagerArg(argv));
+        await releaseCommand(parsePackageManagerArg(argv));
       } catch (error) {
         handleError(error, argv.verbose);
       }

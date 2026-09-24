@@ -153,25 +153,6 @@ describe("Project", () => {
     });
   });
 
-  describe("hasPublishConfig", () => {
-    it("should return true when publishConfig with registry exists", () => {
-      packageJson.publishConfig = { registry: "https://registry.npmjs.org" };
-      const project = new Project(packageJson, "/test/package.json", mockGit);
-      expect(project.hasPublishConfig()).toBe(true);
-    });
-
-    it("should return false when publishConfig is missing", () => {
-      const project = new Project(packageJson, "/test/package.json", mockGit);
-      expect(project.hasPublishConfig()).toBe(false);
-    });
-
-    it("should return false when registry is missing", () => {
-      packageJson.publishConfig = {};
-      const project = new Project(packageJson, "/test/package.json", mockGit);
-      expect(project.hasPublishConfig()).toBe(false);
-    });
-  });
-
   describe("getSnapshotDependencies", () => {
     it("should find SNAPSHOT dependencies", () => {
       packageJson.dependencies = {
