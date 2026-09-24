@@ -2,16 +2,13 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { globSync } from "tinyglobby";
 import { parse as parseYaml } from "yaml";
-import { type PackageJson, serializePackageJson } from "./PackageJson.js";
+import {
+  type DependencySection,
+  type PackageJson,
+  serializePackageJson,
+} from "./PackageJson.js";
 import { Project } from "./Project.js";
 import type { SupportedPackageManager } from "./packageManager.js";
-
-/** The dependency sections of a `package.json`. */
-export type DependencySection =
-  | "dependencies"
-  | "devDependencies"
-  | "optionalDependencies"
-  | "peerDependencies";
 
 export interface WorkspaceOptions {
   /**

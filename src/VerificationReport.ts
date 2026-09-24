@@ -1,10 +1,7 @@
 import path from "node:path";
+import type { DependencySection } from "./PackageJson.js";
 import type { DependencyInfo, Project } from "./Project.js";
-import {
-  type DependencySection,
-  Workspace,
-  type WorkspacePackage,
-} from "./Workspace.js";
+import { Workspace, type WorkspacePackage } from "./Workspace.js";
 
 export interface DependencyReport {
   dependencies: DependencyInfo[];

@@ -1,8 +1,11 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { Git } from "./Git.js";
-import { type PackageJson, serializePackageJson } from "./PackageJson.js";
-import type { DependencySection } from "./Workspace.js";
+import {
+  type DependencySection,
+  type PackageJson,
+  serializePackageJson,
+} from "./PackageJson.js";
 
 import { BranchType } from "./BranchType.js";
 import {
