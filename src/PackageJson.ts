@@ -1,12 +1,26 @@
 import type { PackageJson as OriginalPackageJson } from "type-fest";
 
-interface PublisherConfig {
-  releaseRegistry?: string;
-  snapshotRegistry?: string;
-}
+/**
+ * Structure of a `package.json` file.
+ *
+ * The type is open to arbitrary extra keys so that consumers can read
+ * custom configuration from it. Registries are not configured here but
+ * exclusively via the `JS_PROJECT_SNAPSHOT_REGISTRY` and
+ * `JS_PROJECT_RELEASE_REGISTRY` environment variables.
+ */
+export type PackageJson = OriginalPackageJson;
 
-interface ExtendedPackageJson {
-  publishConfig?: PublisherConfig;
-}
+/** The dependency sections of a `package.json`. */
+export type DependencySection =
+  | "dependencies"
+  | "devDependencies"
+  | "optionalDependencies"
+  | "peerDependencies";
 
-export type PackageJson = OriginalPackageJson & ExtendedPackageJson;
+/**
+ * Serialises a `package.json` the way js-project writes it: 2-space
+ * indentation and a trailing newline.
+ */
+export function serializePackageJson(pkg: PackageJson): string {
+  return `${JSON.stringify(pkg, null, 2)}\n`;
+}

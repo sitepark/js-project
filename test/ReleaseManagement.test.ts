@@ -1,9 +1,12 @@
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BranchType } from "../src/BranchType.js";
 import type { BuildProvider } from "../src/BuildProvider.js";
 import type { Git } from "../src/Git.js";
 import type { NodePublisherProvider } from "../src/NodePublisherProvider.js";
-import type { Project } from "../src/Project.js";
+import { Project } from "../src/Project.js";
 import { ReleaseManagement } from "../src/ReleaseManagement.js";
 
 describe("ReleaseManagement", () => {
@@ -144,6 +147,83 @@ describe("ReleaseManagement", () => {
         "ci(release)",
         "Updating package.json set version to 2.1.1-SNAPSHOT",
       );
+    });
+
+    it("should fall back to <major>.<minor>.0 when the last release version is missing", () => {
+      vi.mocked(mockProject.isRelease).mockReturnValue(true);
+      vi.mocked(mockProject.getVersionsFromMinor).mockReturnValue([
+        undefined,
+      ] as unknown as string[]);
+
+      vi.spyOn(console, "log").mockImplementation(() => {});
+
+      const result = releaseManagement.startHotfix("3.1");
+
+      expect(mockGit.createBranch).toHaveBeenCalledWith(
+        "hotfix/3.1.x",
+        "3.1.0",
+      );
+      expect(result).toBe("3.1.1-SNAPSHOT");
+    });
+
+    it("should write the hotfix version on top of the package.json of the base tag", () => {
+      const dir = mkdtempSync(path.join(tmpdir(), "js-project-hotfix-"));
+      try {
+        const packagePath = path.join(dir, "package.json");
+        const checkedOutPkg = {
+          name: "test-package",
+          version: "2.1.1",
+          dependencies: { foo: "^1.0.0" },
+        };
+        const baseTagPkg = {
+          name: "test-package",
+          version: "2.1.2",
+          dependencies: { foo: "^2.0.0" },
+          scripts: { build: "tsc" },
+        };
+        writeFileSync(packagePath, `${JSON.stringify(checkedOutPkg)}\n`);
+
+        const git = {
+          getCurrentBranch: vi.fn().mockReturnValue("main"),
+          getVersionsFromMinor: vi
+            .fn()
+            .mockReturnValue(["2.1.0", "2.1.1", "2.1.2"]),
+          // simulates checking out the base tag, which replaces package.json
+          createBranch: vi.fn(() => {
+            writeFileSync(packagePath, `${JSON.stringify(baseTagPkg)}\n`);
+          }),
+          commit: vi.fn(),
+          pushOrigin: vi.fn(),
+        } as unknown as Git;
+
+        vi.stubEnv("GITHUB_REF_NAME", "");
+        vi.stubEnv("CI_COMMIT_BRANCH", "");
+        vi.stubEnv("CI_MERGE_REQUEST_SOURCE_BRANCH_NAME", "");
+        vi.spyOn(console, "log").mockImplementation(() => {});
+
+        const project = new Project(
+          JSON.parse(readFileSync(packagePath, "utf8")),
+          packagePath,
+          git,
+        );
+        const management = new ReleaseManagement(
+          project,
+          git,
+          mockBuildProvider,
+          mockPublisherProvider,
+        );
+
+        const result = management.startHotfix("2.1");
+
+        expect(result).toBe("2.1.3-SNAPSHOT");
+        expect(JSON.parse(readFileSync(packagePath, "utf8"))).toEqual({
+          ...baseTagPkg,
+          version: "2.1.3-SNAPSHOT",
+        });
+      } finally {
+        vi.unstubAllEnvs();
+        rmSync(dir, { recursive: true, force: true });
+      }
     });
   });
 

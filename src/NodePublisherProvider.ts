@@ -4,6 +4,8 @@ import type { Project } from "./Project.js";
 import type { Publisher } from "./Publisher.js";
 import type { SupportedPackageManager } from "./packageManager.js";
 import { greaterThanEqualsVersion } from "./version.js";
+import { Workspace } from "./Workspace.js";
+
 export class NodePublisherProvider implements Publisher {
   private project: Project;
   private packageManager: SupportedPackageManager;
@@ -34,7 +36,48 @@ export class NodePublisherProvider implements Publisher {
     return versionString;
   }
 
+  /**
+   * Publishes the project.
+   *
+   * Single-package repository: runs `<pm> publish` in the root. A private
+   * root package is skipped.
+   *
+   * pnpm workspace: writes the publish version into the root and every
+   * workspace `package.json` and runs a single `pnpm -r publish`. pnpm
+   * publishes every non-private package, including a non-private workspace
+   * root, in dependency order and resolves `workspace:` specifiers to the
+   * written versions. Nothing is published if every package is private.
+   *
+   * Every `package.json` is restored to its previous contents afterwards,
+   * also when publishing fails.
+   */
   public async publish(): Promise<void> {
+    const workspace = Workspace.forProject(this.project, {
+      packageManager: this.packageManager,
+    });
+    const monorepo = workspace.isMonorepo();
+
+    if (!monorepo && this.project.isPrivate()) {
+      console.log(
+        `Skipping publish of private package "${this.project.getName()}"`,
+      );
+      return;
+    }
+
+    if (monorepo && workspace.getPackages().every((pkg) => pkg.isPrivate())) {
+      console.log(
+        "Skipping publish: all packages of the workspace are private",
+      );
+      return;
+    }
+
+    if (monorepo && this.project.isPrivate()) {
+      console.log(
+        `The workspace root "${this.project.getName()}" is private and not published; ` +
+          "publishing the public workspace packages",
+      );
+    }
+
     if (this.project.getBranchType() === BranchType.Unknown) {
       throw new Error(
         `Unable to publish on unknown branch type "${this.project.getBranch()}"`,
@@ -55,27 +98,38 @@ export class NodePublisherProvider implements Publisher {
       : this.project.getSnapshotRegistry();
 
     const version = this.project.getVersion();
-
-    if (this.project.isSnapshot()) {
-      const publishVersion = this.getNpmPublishVersion();
-      this.project.updateVersion(publishVersion);
-      console.log(`Updated snapshot version to ${publishVersion}`);
-    }
-
-    const versions = this.project.getVersions();
-    const lastReleaseVersion =
-      versions.length === 0
-        ? "0.0.0"
-        : (versions[versions.length - 1] ?? "0.0.0");
-
-    console.log(
-      `Last release version: ${lastReleaseVersion} Current version: ${version}`,
-    );
-
-    const tag = this.getPublishTag(version, lastReleaseVersion);
-    console.log(`Use tag: ${tag}`);
+    const files = workspace.captureFiles();
+    // Set before writing: a write that fails halfway must be restored too.
+    let restoreNeeded = false;
 
     try {
+      // In a workspace every package is synced to the publish version
+      // (lockstep), for releases too, so that drifted packages and
+      // `workspace:` specifiers resolve to the version actually published.
+      if (this.project.isSnapshot() || monorepo) {
+        const publishVersion = this.getNpmPublishVersion();
+        restoreNeeded = true;
+        workspace.writeVersion(publishVersion);
+        console.log(
+          this.project.isSnapshot()
+            ? `Updated snapshot version to ${publishVersion}`
+            : `Updated workspace versions to ${publishVersion}`,
+        );
+      }
+
+      const versions = this.project.getVersions();
+      const lastReleaseVersion =
+        versions.length === 0
+          ? "0.0.0"
+          : (versions[versions.length - 1] ?? "0.0.0");
+
+      console.log(
+        `Last release version: ${lastReleaseVersion} Current version: ${version}`,
+      );
+
+      const tag = this.getPublishTag(version, lastReleaseVersion);
+      console.log(`Use tag: ${tag}`);
+
       const args = [
         this.packageManager === "npm"
           ? ["--ignore-scripts", "--non-interactive"]
@@ -93,14 +147,19 @@ export class NodePublisherProvider implements Publisher {
       execSync("git status", {
         stdio: "inherit",
       });
-      const cmd = `${this.packageManager} publish ${args.join(" ")}`;
+      // Never use `-r` outside a workspace: without a pnpm-workspace.yaml,
+      // pnpm treats every nested package.json as a workspace package.
+      const publishCommand = monorepo
+        ? `${this.packageManager} -r publish`
+        : `${this.packageManager} publish`;
+      const cmd = `${publishCommand} ${args.join(" ")}`;
       console.log(cmd);
       execSync(cmd, {
         stdio: "inherit",
       });
     } finally {
-      if (this.project.getVersion() !== version) {
-        this.project.updateVersion(version);
+      if (restoreNeeded) {
+        workspace.restoreFiles(files);
       }
     }
     return;

@@ -1,14 +1,14 @@
 import { exit } from "node:process";
 import type { SupportedPackageManager } from "../packageManager.js";
 import { ReleaseManagementFactory } from "../ReleaseManagementFactory.js";
-import { Project } from "../Project.js";
+import { Workspace } from "../Workspace.js";
 import { BuildProvider } from "../BuildProvider.js";
 import { NodePublisherProvider } from "../NodePublisherProvider.js";
 
 export function verifyReleaseCommand(
   packageManager: SupportedPackageManager,
 ): void {
-  const project = Project.forCwd();
+  const project = Workspace.forCwd({ packageManager }).getRoot();
   const buildProvider = new BuildProvider(project, packageManager);
   const nodePublisher = new NodePublisherProvider(project, packageManager);
 
@@ -21,5 +21,8 @@ export function verifyReleaseCommand(
   if (!report.isReleaseable()) {
     console.log(report.toString());
     exit(1);
+  }
+  if (report.hasInformation()) {
+    console.log(report.toString());
   }
 }

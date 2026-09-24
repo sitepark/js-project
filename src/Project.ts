@@ -1,7 +1,11 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { Git } from "./Git.js";
-import type { PackageJson } from "./PackageJson.js";
+import {
+  type DependencySection,
+  type PackageJson,
+  serializePackageJson,
+} from "./PackageJson.js";
 
 import { BranchType } from "./BranchType.js";
 import {
@@ -11,12 +15,6 @@ import {
   isSnapshot,
   releaseVersion,
 } from "./version.js";
-
-type DependencyType =
-  | "dependencies"
-  | "devDependencies"
-  | "optionalDependencies"
-  | "peerDependencies";
 
 export interface DependencyInfo {
   name: string;
@@ -125,6 +123,14 @@ export class Project {
     return path.join(this.getBasePath(), "build");
   }
 
+  /**
+   * Checks whether the package is marked as `"private": true`.
+   * Private packages are never published.
+   */
+  public isPrivate(): boolean {
+    return this.pkg.private === true;
+  }
+
   public getVersion(): string {
     return this.pkg.version || "1.0.0-SNAPSHOT";
   }
@@ -149,8 +155,7 @@ export class Project {
 
   public updateVersion(newVersion: string): void {
     this.pkg.version = newVersion;
-    const pkgContent = `${JSON.stringify(this.pkg, null, 2)}\n`;
-    writeFileSync(this.packagePath, pkgContent, "utf8");
+    writeFileSync(this.packagePath, serializePackageJson(this.pkg), "utf8");
   }
 
   public getBranch(): string {
@@ -206,23 +211,19 @@ export class Project {
   }
 
   /**
-   * Indicates whether this package has valid publishConfig
-   * @returns
-   */
-  public hasPublishConfig(): boolean {
-    return !!this.pkg.publishConfig?.registry;
-  }
-
-  /**
    * Returns a list of dependencies that have a
    * SNAPSHOT version.
    *
    * @param type Valid dependency types are "dependencies",
    * devDependencies", "optionalDependencies", "peerDependencies"
    * @returns
+   * @deprecated Checks only this project's `package.json`. Use
+   * `VerificationReport.getSnapshotDependencies()` (e.g. via
+   * `ReleaseManagement.verifyRelease()`), which covers the root and every
+   * workspace package and resolves `catalog:` specifiers.
    */
   public getSnapshotDependencies(
-    type: DependencyType = "dependencies",
+    type: DependencySection = "dependencies",
   ): DependencyInfo[] {
     const snapshots: DependencyInfo[] = [];
     if (!Object.hasOwn(this.pkg, type)) {
