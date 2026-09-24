@@ -22,8 +22,10 @@ export class ReleaseManagement {
    * @param workspace the workspace rooted at `project`. Versions are written
    *   into and committed for every package of the workspace (fixed / lockstep
    *   versioning). Without a workspace only the `package.json` of `project`
-   *   is written and committed. {@link ReleaseManagementFactory.forCwd}
-   *   always passes the workspace.
+   *   is written and committed, as before monorepo support, so that the
+   *   public four-argument constructor keeps its behaviour.
+   *   {@link ReleaseManagementFactory.forCwd} always passes the workspace,
+   *   checked against the package manager of the build provider.
    */
   constructor(
     project: Project,
