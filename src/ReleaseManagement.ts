@@ -1,5 +1,5 @@
 import { BranchType } from "./BranchType.js";
-import type { BuildProvider } from "./BuildProvider.js";
+import { type BuildProvider, workspaceOptionsFor } from "./BuildProvider.js";
 import type { Git } from "./Git.js";
 import type { Project } from "./Project.js";
 import type { Publisher } from "./Publisher.js";
@@ -43,7 +43,7 @@ export class ReleaseManagement {
    * Generates a VerificationReport for this project
    */
   public verifyRelease(): VerificationReport {
-    return new VerificationReport(this.project);
+    return new VerificationReport(this.project, this.workspace);
   }
 
   public startHotfix(tag: string): string {
@@ -81,7 +81,10 @@ export class ReleaseManagement {
     // the new version is written on top of that content.
     this.project.refresh();
     if (this.workspace) {
-      this.workspace = Workspace.forProject(this.project);
+      this.workspace = Workspace.forProject(
+        this.project,
+        workspaceOptionsFor(this.buildProvider),
+      );
     }
     const hotfixPaths = this.writeVersion(hotfixSnapshotVersion);
     this.buildProvider.formatPackageJson();
