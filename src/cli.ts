@@ -144,7 +144,7 @@ yargs(hideBin(process.argv))
   )
   .command(
     "clean",
-    "Clean build directory",
+    "Clean the build directory of the root and every workspace package",
     () => {},
     async (argv) => {
       try {
