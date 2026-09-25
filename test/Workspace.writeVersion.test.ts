@@ -130,6 +130,65 @@ describe("Workspace version writes", () => {
     });
   });
 
+  describe("restoreFiles()", () => {
+    it("should report the restored version for the root and every workspace package", () => {
+      const fixture = createFixture({
+        root: { name: "root", version: "1.2.0-SNAPSHOT", private: true },
+        workspace: { packages: ["packages/*"] },
+        packages: {
+          "packages/a": { name: "a", version: "1.2.0-SNAPSHOT" },
+          "packages/b": { name: "b", version: "1.2.0-SNAPSHOT" },
+        },
+      });
+      const workspace = Workspace.forCwd();
+      const files = workspace.captureFiles();
+      workspace.writeVersion("9.9.9");
+
+      workspace.restoreFiles(files);
+
+      expect(fixture.readJson().version).toBe("1.2.0-SNAPSHOT");
+      expect(fixture.readJson("packages/a").version).toBe("1.2.0-SNAPSHOT");
+      expect(fixture.readJson("packages/b").version).toBe("1.2.0-SNAPSHOT");
+      expect(workspace.getRoot().getVersion()).toBe("1.2.0-SNAPSHOT");
+      expect(workspace.getPackages().map((p) => p.getVersion())).toEqual([
+        "1.2.0-SNAPSHOT",
+        "1.2.0-SNAPSHOT",
+        "1.2.0-SNAPSHOT",
+      ]);
+    });
+  });
+
+  describe("getPackages()", () => {
+    it("should show the root package as re-read by a refresh of the root Project", () => {
+      const fixture = createFixture({
+        root: { name: "root", version: "1.2.0-SNAPSHOT", private: true },
+        workspace: { packages: ["packages/*"] },
+        packages: { "packages/a": { name: "a", version: "1.2.0-SNAPSHOT" } },
+      });
+      const workspace = Workspace.forCwd();
+      // e.g. js-ies-module refreshes the root Project after changing the file
+      writeFileSync(
+        fixture.path("package.json"),
+        JSON.stringify({
+          name: "renamed-root",
+          version: "1.3.0-SNAPSHOT",
+          dependencies: { a: "workspace:*" },
+        }),
+      );
+
+      workspace.getRoot().refresh();
+
+      const [root] = workspace.getPackages();
+      expect(root.isRoot()).toBe(true);
+      expect(root.getName()).toBe("renamed-root");
+      expect(root.getVersion()).toBe("1.3.0-SNAPSHOT");
+      expect(root.isPrivate()).toBe(false);
+      expect(root.getDependencies("dependencies")).toEqual({
+        a: "workspace:*",
+      });
+    });
+  });
+
   describe("getPackageJsonPaths()", () => {
     it("should list the root first and every workspace package relative to the root", () => {
       createFixture({

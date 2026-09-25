@@ -40,20 +40,34 @@ export class WorkspaceFiles {
 /**
  * A package of a {@link Workspace}: the root package or one of the packages
  * matched by the workspace globs. A read-only view of its `package.json`.
+ *
+ * The view shows the raw manifest: a missing `name` or `version` is
+ * `undefined`, and the display name of an unnamed root is `.`. The root
+ * {@link Project} applies defaults instead (`unnamed-package`,
+ * `1.0.0-SNAPSHOT`). The root package reads through the root `Project`, so it
+ * always shows the `Project`'s current manifest, also after
+ * {@link Project.refresh}.
  */
 export class WorkspacePackage {
   private readonly manifestPath: string;
-  private readonly manifest: PackageJson;
+  private readonly readManifest: () => PackageJson;
   /** package directory relative to the workspace root, `/`-separated */
   private readonly relativeDir: string;
 
   /**
    * @internal packages are created by {@link Workspace} only
+   * @param manifest the manifest, or a function returning the current one
+   * (the root package reads through the root {@link Project})
    * @param rootDir directory of the workspace root
    */
-  constructor(manifestPath: string, manifest: PackageJson, rootDir: string) {
+  constructor(
+    manifestPath: string,
+    manifest: PackageJson | (() => PackageJson),
+    rootDir: string,
+  ) {
     this.manifestPath = manifestPath;
-    this.manifest = manifest;
+    this.readManifest =
+      typeof manifest === "function" ? manifest : () => manifest;
     this.relativeDir = path
       .relative(rootDir, path.dirname(manifestPath))
       .split(path.sep)
@@ -66,7 +80,7 @@ export class WorkspacePackage {
   }
 
   public getName(): string | undefined {
-    return this.manifest.name;
+    return this.readManifest().name;
   }
 
   /**
@@ -78,18 +92,20 @@ export class WorkspacePackage {
   }
 
   public getVersion(): string | undefined {
-    return this.manifest.version;
+    return this.readManifest().version;
   }
 
   /** Checks whether the package is marked as `"private": true`. */
   public isPrivate(): boolean {
-    return this.manifest.private === true;
+    return this.readManifest().private === true;
   }
 
   /** Dependencies of the given section (empty if the section is missing). */
   public getDependencies(section: DependencySection): Record<string, string> {
     const dependencies: Record<string, string> = {};
-    for (const [name, range] of Object.entries(this.manifest[section] ?? {})) {
+    for (const [name, range] of Object.entries(
+      this.readManifest()[section] ?? {},
+    )) {
       if (typeof range === "string") {
         dependencies[name] = range;
       }
@@ -98,7 +114,7 @@ export class WorkspacePackage {
   }
 
   public getPackageJson(): PackageJson {
-    return this.manifest;
+    return this.readManifest();
   }
 
   /** absolute path of the package's `package.json` */
@@ -175,7 +191,7 @@ export class Workspace {
     this.packages = [
       new WorkspacePackage(
         root.getPackagePath(),
-        root.getPackageJson(),
+        () => root.getPackageJson(),
         root.getBasePath(),
       ),
       ...(definition ? discoverPackages(root, definition) : []),
@@ -285,8 +301,8 @@ export class Workspace {
 
   /**
    * Writes back exactly the bytes saved by {@link captureFiles} and re-reads
-   * the root {@link Project} and the cached versions of the workspace
-   * packages. Every file is attempted even if one fails; the first error is
+   * the root {@link Project} (which the root package reads through) and the
+   * cached versions of the workspace packages. Every file is attempted even if one fails; the first error is
    * rethrown afterwards.
    */
   public restoreFiles(files: WorkspaceFiles): void {
