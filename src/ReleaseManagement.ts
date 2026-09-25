@@ -130,7 +130,6 @@ export class ReleaseManagement {
     );
 
     const releasePaths = this.writeVersion(releaseVersion);
-    this.project.refresh();
     this.buildProvider.formatPackageJson();
 
     this.logTask(`Building package`, () => {
@@ -152,7 +151,6 @@ export class ReleaseManagement {
 
     const nextSnapshotVersion = this.project.getNextSnapshotVersion();
     const snapshotPaths = this.writeVersion(nextSnapshotVersion);
-    this.project.refresh();
 
     this.git.commit(
       snapshotPaths,
