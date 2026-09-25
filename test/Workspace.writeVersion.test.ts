@@ -115,6 +115,41 @@ describe("Workspace version writes", () => {
       });
     });
 
+    it("should write the root on top of its current file content, not the content read at creation", () => {
+      const fixture = createFixture({
+        root: { name: "root", version: "1.2.0-SNAPSHOT", private: true },
+        workspace: { packages: ["packages/*"] },
+        packages: { "packages/a": { name: "a", version: "1.2.0-SNAPSHOT" } },
+      });
+      const workspace = Workspace.forCwd();
+      // e.g. rewritten by format:package-json after the workspace was created
+      writeFileSync(
+        fixture.path("package.json"),
+        JSON.stringify({
+          private: true,
+          version: "1.2.0-SNAPSHOT",
+          name: "root",
+          description: "added later",
+        }),
+      );
+
+      workspace.writeVersion("2.0.0");
+
+      expect(fixture.readFile("package.json")).toBe(
+        `${JSON.stringify(
+          {
+            private: true,
+            version: "2.0.0",
+            name: "root",
+            description: "added later",
+          },
+          null,
+          2,
+        )}\n`,
+      );
+      expect(workspace.getRoot().getVersion()).toBe("2.0.0");
+    });
+
     it("should only write the root package.json in a single-package repo", () => {
       const fixture = createFixture({
         root: { name: "single", version: "1.2.0-SNAPSHOT" },

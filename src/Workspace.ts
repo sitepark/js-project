@@ -254,24 +254,24 @@ export class Workspace {
   /**
    * Writes `version` into the root `package.json` and into the `package.json`
    * of every workspace package, private or not (fixed / lockstep
-   * versioning). The root is written through {@link Project.updateVersion},
-   * so the in-memory root `Project` stays in sync. Workspace packages are
-   * re-read from disk, so only their `version` changes; all other keys stay
-   * untouched. Every file is written with 2-space indentation and a trailing
-   * newline.
+   * versioning). Every file, the root included, is re-read from disk, so
+   * only its `version` changes; all other keys and their order stay as they
+   * are on disk, also if the file changed after the workspace was created.
+   * Every file is written with 2-space indentation and a trailing newline.
+   * The root {@link Project} is refreshed afterwards, so it (and the root
+   * package, which reads through it) shows the written content.
    */
   public writeVersion(version: string): void {
-    this.root.updateVersion(version);
     for (const pkg of this.packages) {
-      if (pkg.isRoot()) {
-        continue;
-      }
       const manifestPath = pkg.getPackagePath();
       const manifest = readJson(manifestPath);
       manifest.version = version;
       writeFileSync(manifestPath, serializePackageJson(manifest), "utf8");
-      pkg.getPackageJson().version = version;
+      if (!pkg.isRoot()) {
+        pkg.getPackageJson().version = version;
+      }
     }
+    this.root.refresh();
   }
 
   /**
