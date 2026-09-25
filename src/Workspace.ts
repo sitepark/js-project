@@ -56,18 +56,17 @@ export class WorkspacePackage {
 
   /**
    * @internal packages are created by {@link Workspace} only
-   * @param manifest the manifest, or a function returning the current one
-   * (the root package reads through the root {@link Project})
+   * @param readManifest returns the current manifest (the root package reads
+   * through the root {@link Project})
    * @param rootDir directory of the workspace root
    */
   constructor(
     manifestPath: string,
-    manifest: PackageJson | (() => PackageJson),
+    readManifest: () => PackageJson,
     rootDir: string,
   ) {
     this.manifestPath = manifestPath;
-    this.readManifest =
-      typeof manifest === "function" ? manifest : () => manifest;
+    this.readManifest = readManifest;
     this.relativeDir = path
       .relative(rootDir, path.dirname(manifestPath))
       .split(path.sep)
@@ -267,11 +266,8 @@ export class Workspace {
       const manifest = readJson(manifestPath);
       manifest.version = version;
       writeFileSync(manifestPath, serializePackageJson(manifest), "utf8");
-      if (!pkg.isRoot()) {
-        pkg.getPackageJson().version = version;
-      }
     }
-    this.root.refresh();
+    this.syncFromDisk();
   }
 
   /**
@@ -302,8 +298,8 @@ export class Workspace {
   /**
    * Writes back exactly the bytes saved by {@link captureFiles} and re-reads
    * the root {@link Project} (which the root package reads through) and the
-   * cached versions of the workspace packages. Every file is attempted even if one fails; the first error is
-   * rethrown afterwards.
+   * cached versions of the workspace packages. Every file is attempted even
+   * if one fails; the first error is rethrown afterwards.
    */
   public restoreFiles(files: WorkspaceFiles): void {
     const errors: unknown[] = [];
@@ -314,8 +310,19 @@ export class Workspace {
         errors.push(error);
       }
     }
+    this.syncFromDisk();
+    if (errors.length > 0) {
+      throw errors[0];
+    }
+  }
+
+  /**
+   * Re-reads the state a version change touches from disk: refreshes the root
+   * {@link Project} (which the root package reads through) and updates the
+   * cached `version` of every workspace package (removed if missing on disk).
+   */
+  private syncFromDisk(): void {
     this.root.refresh();
-    // writeVersion() updates the cached versions of the workspace packages
     for (const pkg of this.packages) {
       if (pkg.isRoot()) {
         continue;
@@ -327,9 +334,6 @@ export class Workspace {
       } else {
         manifest.version = version;
       }
-    }
-    if (errors.length > 0) {
-      throw errors[0];
     }
   }
 }
@@ -481,7 +485,8 @@ function discoverPackages(
           "package.yaml and package.json5 manifests are not supported.",
       );
     }
-    return new WorkspacePackage(manifestPath, readJson(manifestPath), rootDir);
+    const manifest = readJson(manifestPath);
+    return new WorkspacePackage(manifestPath, () => manifest, rootDir);
   });
 }
 

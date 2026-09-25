@@ -214,11 +214,11 @@ describe("Workspace version writes", () => {
       workspace.getRoot().refresh();
 
       const [root] = workspace.getPackages();
-      expect(root.isRoot()).toBe(true);
-      expect(root.getName()).toBe("renamed-root");
-      expect(root.getVersion()).toBe("1.3.0-SNAPSHOT");
-      expect(root.isPrivate()).toBe(false);
-      expect(root.getDependencies("dependencies")).toEqual({
+      expect(root?.isRoot()).toBe(true);
+      expect(root?.getName()).toBe("renamed-root");
+      expect(root?.getVersion()).toBe("1.3.0-SNAPSHOT");
+      expect(root?.isPrivate()).toBe(false);
+      expect(root?.getDependencies("dependencies")).toEqual({
         a: "workspace:*",
       });
     });
