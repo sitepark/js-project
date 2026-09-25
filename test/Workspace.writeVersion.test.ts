@@ -115,6 +115,41 @@ describe("Workspace version writes", () => {
       });
     });
 
+    it("should write the root on top of its current file content, not the content read at creation", () => {
+      const fixture = createFixture({
+        root: { name: "root", version: "1.2.0-SNAPSHOT", private: true },
+        workspace: { packages: ["packages/*"] },
+        packages: { "packages/a": { name: "a", version: "1.2.0-SNAPSHOT" } },
+      });
+      const workspace = Workspace.forCwd();
+      // e.g. rewritten by format:package-json after the workspace was created
+      writeFileSync(
+        fixture.path("package.json"),
+        JSON.stringify({
+          private: true,
+          version: "1.2.0-SNAPSHOT",
+          name: "root",
+          description: "added later",
+        }),
+      );
+
+      workspace.writeVersion("2.0.0");
+
+      expect(fixture.readFile("package.json")).toBe(
+        `${JSON.stringify(
+          {
+            private: true,
+            version: "2.0.0",
+            name: "root",
+            description: "added later",
+          },
+          null,
+          2,
+        )}\n`,
+      );
+      expect(workspace.getRoot().getVersion()).toBe("2.0.0");
+    });
+
     it("should only write the root package.json in a single-package repo", () => {
       const fixture = createFixture({
         root: { name: "single", version: "1.2.0-SNAPSHOT" },
@@ -127,6 +162,65 @@ describe("Workspace version writes", () => {
         `${JSON.stringify({ name: "single", version: "1.2.0" }, null, 2)}\n`,
       );
       expect(fixture.readJson("packages/a").version).toBe("0.0.0");
+    });
+  });
+
+  describe("restoreFiles()", () => {
+    it("should report the restored version for the root and every workspace package", () => {
+      const fixture = createFixture({
+        root: { name: "root", version: "1.2.0-SNAPSHOT", private: true },
+        workspace: { packages: ["packages/*"] },
+        packages: {
+          "packages/a": { name: "a", version: "1.2.0-SNAPSHOT" },
+          "packages/b": { name: "b", version: "1.2.0-SNAPSHOT" },
+        },
+      });
+      const workspace = Workspace.forCwd();
+      const files = workspace.captureFiles();
+      workspace.writeVersion("9.9.9");
+
+      workspace.restoreFiles(files);
+
+      expect(fixture.readJson().version).toBe("1.2.0-SNAPSHOT");
+      expect(fixture.readJson("packages/a").version).toBe("1.2.0-SNAPSHOT");
+      expect(fixture.readJson("packages/b").version).toBe("1.2.0-SNAPSHOT");
+      expect(workspace.getRoot().getVersion()).toBe("1.2.0-SNAPSHOT");
+      expect(workspace.getPackages().map((p) => p.getVersion())).toEqual([
+        "1.2.0-SNAPSHOT",
+        "1.2.0-SNAPSHOT",
+        "1.2.0-SNAPSHOT",
+      ]);
+    });
+  });
+
+  describe("getPackages()", () => {
+    it("should show the root package as re-read by a refresh of the root Project", () => {
+      const fixture = createFixture({
+        root: { name: "root", version: "1.2.0-SNAPSHOT", private: true },
+        workspace: { packages: ["packages/*"] },
+        packages: { "packages/a": { name: "a", version: "1.2.0-SNAPSHOT" } },
+      });
+      const workspace = Workspace.forCwd();
+      // e.g. js-ies-module refreshes the root Project after changing the file
+      writeFileSync(
+        fixture.path("package.json"),
+        JSON.stringify({
+          name: "renamed-root",
+          version: "1.3.0-SNAPSHOT",
+          dependencies: { a: "workspace:*" },
+        }),
+      );
+
+      workspace.getRoot().refresh();
+
+      const [root] = workspace.getPackages();
+      expect(root?.isRoot()).toBe(true);
+      expect(root?.getName()).toBe("renamed-root");
+      expect(root?.getVersion()).toBe("1.3.0-SNAPSHOT");
+      expect(root?.isPrivate()).toBe(false);
+      expect(root?.getDependencies("dependencies")).toEqual({
+        a: "workspace:*",
+      });
     });
   });
 

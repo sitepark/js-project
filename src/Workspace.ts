@@ -40,20 +40,33 @@ export class WorkspaceFiles {
 /**
  * A package of a {@link Workspace}: the root package or one of the packages
  * matched by the workspace globs. A read-only view of its `package.json`.
+ *
+ * The view shows the raw manifest: a missing `name` or `version` is
+ * `undefined`, and the display name of an unnamed root is `.`. The root
+ * {@link Project} applies defaults instead (`unnamed-package`,
+ * `1.0.0-SNAPSHOT`). The root package reads through the root `Project`, so it
+ * always shows the `Project`'s current manifest, also after
+ * {@link Project.refresh}.
  */
 export class WorkspacePackage {
   private readonly manifestPath: string;
-  private readonly manifest: PackageJson;
+  private readonly readManifest: () => PackageJson;
   /** package directory relative to the workspace root, `/`-separated */
   private readonly relativeDir: string;
 
   /**
    * @internal packages are created by {@link Workspace} only
+   * @param readManifest returns the current manifest (the root package reads
+   * through the root {@link Project})
    * @param rootDir directory of the workspace root
    */
-  constructor(manifestPath: string, manifest: PackageJson, rootDir: string) {
+  constructor(
+    manifestPath: string,
+    readManifest: () => PackageJson,
+    rootDir: string,
+  ) {
     this.manifestPath = manifestPath;
-    this.manifest = manifest;
+    this.readManifest = readManifest;
     this.relativeDir = path
       .relative(rootDir, path.dirname(manifestPath))
       .split(path.sep)
@@ -66,7 +79,7 @@ export class WorkspacePackage {
   }
 
   public getName(): string | undefined {
-    return this.manifest.name;
+    return this.readManifest().name;
   }
 
   /**
@@ -78,18 +91,20 @@ export class WorkspacePackage {
   }
 
   public getVersion(): string | undefined {
-    return this.manifest.version;
+    return this.readManifest().version;
   }
 
   /** Checks whether the package is marked as `"private": true`. */
   public isPrivate(): boolean {
-    return this.manifest.private === true;
+    return this.readManifest().private === true;
   }
 
   /** Dependencies of the given section (empty if the section is missing). */
   public getDependencies(section: DependencySection): Record<string, string> {
     const dependencies: Record<string, string> = {};
-    for (const [name, range] of Object.entries(this.manifest[section] ?? {})) {
+    for (const [name, range] of Object.entries(
+      this.readManifest()[section] ?? {},
+    )) {
       if (typeof range === "string") {
         dependencies[name] = range;
       }
@@ -98,7 +113,7 @@ export class WorkspacePackage {
   }
 
   public getPackageJson(): PackageJson {
-    return this.manifest;
+    return this.readManifest();
   }
 
   /** absolute path of the package's `package.json` */
@@ -175,7 +190,7 @@ export class Workspace {
     this.packages = [
       new WorkspacePackage(
         root.getPackagePath(),
-        root.getPackageJson(),
+        () => root.getPackageJson(),
         root.getBasePath(),
       ),
       ...(definition ? discoverPackages(root, definition) : []),
@@ -238,24 +253,21 @@ export class Workspace {
   /**
    * Writes `version` into the root `package.json` and into the `package.json`
    * of every workspace package, private or not (fixed / lockstep
-   * versioning). The root is written through {@link Project.updateVersion},
-   * so the in-memory root `Project` stays in sync. Workspace packages are
-   * re-read from disk, so only their `version` changes; all other keys stay
-   * untouched. Every file is written with 2-space indentation and a trailing
-   * newline.
+   * versioning). Every file, the root included, is re-read from disk, so
+   * only its `version` changes; all other keys and their order stay as they
+   * are on disk, also if the file changed after the workspace was created.
+   * Every file is written with 2-space indentation and a trailing newline.
+   * The root {@link Project} is refreshed afterwards, so it (and the root
+   * package, which reads through it) shows the written content.
    */
   public writeVersion(version: string): void {
-    this.root.updateVersion(version);
     for (const pkg of this.packages) {
-      if (pkg.isRoot()) {
-        continue;
-      }
       const manifestPath = pkg.getPackagePath();
       const manifest = readJson(manifestPath);
       manifest.version = version;
       writeFileSync(manifestPath, serializePackageJson(manifest), "utf8");
-      pkg.getPackageJson().version = version;
     }
+    this.syncFromDisk();
   }
 
   /**
@@ -285,9 +297,9 @@ export class Workspace {
 
   /**
    * Writes back exactly the bytes saved by {@link captureFiles} and re-reads
-   * the root {@link Project} and the cached versions of the workspace
-   * packages. Every file is attempted even if one fails; the first error is
-   * rethrown afterwards.
+   * the root {@link Project} (which the root package reads through) and the
+   * cached versions of the workspace packages. Every file is attempted even
+   * if one fails; the first error is rethrown afterwards.
    */
   public restoreFiles(files: WorkspaceFiles): void {
     const errors: unknown[] = [];
@@ -298,8 +310,19 @@ export class Workspace {
         errors.push(error);
       }
     }
+    this.syncFromDisk();
+    if (errors.length > 0) {
+      throw errors[0];
+    }
+  }
+
+  /**
+   * Re-reads the state a version change touches from disk: refreshes the root
+   * {@link Project} (which the root package reads through) and updates the
+   * cached `version` of every workspace package (removed if missing on disk).
+   */
+  private syncFromDisk(): void {
     this.root.refresh();
-    // writeVersion() updates the cached versions of the workspace packages
     for (const pkg of this.packages) {
       if (pkg.isRoot()) {
         continue;
@@ -311,9 +334,6 @@ export class Workspace {
       } else {
         manifest.version = version;
       }
-    }
-    if (errors.length > 0) {
-      throw errors[0];
     }
   }
 }
@@ -465,7 +485,8 @@ function discoverPackages(
           "package.yaml and package.json5 manifests are not supported.",
       );
     }
-    return new WorkspacePackage(manifestPath, readJson(manifestPath), rootDir);
+    const manifest = readJson(manifestPath);
+    return new WorkspacePackage(manifestPath, () => manifest, rootDir);
   });
 }
 

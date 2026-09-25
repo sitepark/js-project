@@ -172,6 +172,16 @@ describe("ReleaseManagementFactory in a pnpm workspace", () => {
       });
     });
 
+    it("should report no version drift when verifying on the same instance after the release", async () => {
+      createFixture(workspaceFixture("1.2.0-SNAPSHOT"));
+      recordExecSync({ branch: "main", tags: ["1.1.0"] });
+      const releaseManagement = releaseManagementForCwd();
+
+      await releaseManagement.release();
+
+      expect(releaseManagement.verifyRelease().getVersionDrift()).toEqual([]);
+    });
+
     it("should continue with the next patch SNAPSHOT on a hotfix branch", async () => {
       const fixture = createFixture(workspaceFixture("1.2.1-SNAPSHOT"));
       const exec = recordExecSync({
