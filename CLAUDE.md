@@ -87,6 +87,7 @@ The architecture follows a clean separation of concerns with provider pattern fo
   - external SNAPSHOT dependencies in all four dependency sections of the root and every workspace package (`workspace:` specifiers ignored, `catalog:` specifiers resolved via `Workspace.resolveCatalogSpecifier()`)
   - in a monorepo: public packages with a private sibling in `dependencies`/`peerDependencies`
   - version drift from the root, reported as information only
+- `ProjectCleaner` - Used by `js-project clean`: deletes `<basePath>/build` of every package in `Workspace.getPackages()` (root first, private packages included). A failed deletion is logged and the remaining packages are still cleaned (exit code 0)
 - `ReleaseManagementFactory` - Factory for creating ReleaseManagement instances with providers
 - `PackageJson` - TypeScript interface for package.json structure
 
@@ -153,9 +154,10 @@ Hotfix workflow:
 - **Guards**: `Workspace.forCwd()` / `Workspace.forProject()` fail when the directory is inside a workspace but not its root (search stops at the git repository root), and, when a `packageManager` option is given, when a detected workspace is used with npm or yarn ("monorepo mode currently requires pnpm") or declared only by the `workspaces` field.
 - **Catalogs**: `getCatalogs()` / `resolveCatalogSpecifier()` read `catalog` / `catalogs` of any root `pnpm-workspace.yaml` (also settings-only), default catalog under `"default"`, like pnpm.
 - **Publishing**: `captureFiles()` / `restoreFiles()` save and write back the raw bytes of every `package.json` in `getPackageJsonPaths()` (used by `NodePublisherProvider.publish()` around the publish version) and re-sync the root `Project` and the cached package versions.
-- All CLI commands obtain the root `Project` via `Workspace.forCwd({ packageManager })`. `Project` stays a single-package abstraction; `Project.forCwd()` keeps returning the root package.
+- All CLI commands except `clean` obtain the root `Project` via `Workspace.forCwd({ packageManager })`. `Project` stays a single-package abstraction; `Project.forCwd()` keeps returning the root package.
 - **Fixed (lockstep) versioning**: one version for the whole workspace, the root `package.json` is the single source of truth, one bare `X.Y.Z` tag, one `hotfix/X.Y.x` line. `Workspace.writeVersion(version)` writes the root (through `Project.updateVersion`) and every workspace package, private or not, so drift heals itself; `Workspace.getPackageJsonPaths()` lists the touched files (root first, relative to the root) for `git add`.
 - `ReleaseManagement` takes the `Workspace` as optional 5th constructor argument (`ReleaseManagementFactory.forCwd` keeps its signature and builds it via `Workspace.forProject(project, { packageManager })` with the package manager of the `BuildProvider` (`BuildProvider.getPackageManager()`), so a workspace with npm/yarn fails when the release management is created, before anything is written, committed or tagged). `release()` / `startHotfix()` write versions through it and commit all touched `package.json` files (`Git.commit` accepts `string | string[]`). `startHotfix()` rebuilds the workspace (with the same package manager check) after checking out the base tag, because the package set may differ there. Without a workspace only the root `package.json` is written and committed, so the public four-argument constructor keeps its pre-monorepo behaviour (also used by the mock-based unit tests).
+- `clean` calls `Workspace.forCwd()` without a package manager (run-from-root guard only), so it also cleans npm/yarn workspaces and workspaces declared only by the `workspaces` field.
 - `format:package-json` runs exactly once, at the root, after the versions are written; formatting the workspace `package.json` files is the responsibility of that root script.
 - Every `package.json` written by js-project uses `serializePackageJson()` (`src/PackageJson.ts`): 2-space JSON plus a trailing newline.
 
@@ -188,7 +190,6 @@ Current test files in `test/` (Vitest counts each `it.each` case):
 - `version.test.ts` (19 tests) - version utility functions (semver operations, SNAPSHOT handling)
 - `Git.test.ts` (2 tests) - `Git.commit()` with one or several paths
 - `Project.test.ts` (38 tests) - project management (version handling, branch detection, scripts, registries, deprecated `getSnapshotDependencies()`)
-- `ProjectCleaner.test.ts` (3 tests) - cleaning the build directory
 - `Workspace.test.ts` (37 tests) - workspace detection, package discovery, guards, catalogs, version writing
 - `Workspace.writeVersion.test.ts` (7 tests) - writing versions into every `package.json` and restoring them
 - `VerificationReport.test.ts` (27 tests) - SNAPSHOT dependency check in single-package repos and workspaces
@@ -198,10 +199,11 @@ Current test files in `test/` (Vitest counts each `it.each` case):
 - `ReleaseManagementFactory.workspace.test.ts` (18 tests) - release/startHotfix in a pnpm workspace (also end to end with the real `NodePublisherProvider`), npm/yarn guard of the library path
 - `NodePublisherProvider.test.ts` (2 tests) - publish version computation
 - `NodePublisherProvider.publish.test.ts` (16 tests) - publish commands, private packages, restoring `package.json` files
+- `commands/clean.test.ts` (5 tests) - cleaning `build/` of the root and every workspace package
 - `commands/release.test.ts` (2 tests) - release command wiring
 - `commands/workspaceGuards.test.ts` (15 tests) - run-from-root and npm/yarn guards of every CLI command
 
-Total: 230 tests
+Total: 232 tests
 
 ### Writing Tests
 
