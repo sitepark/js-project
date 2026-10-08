@@ -55,37 +55,41 @@ describe("Workspace version writes", () => {
       expect(fixture.readJson("packages/unversioned").version).toBe("1.2.0");
     });
 
-    it("should keep all other keys and their order, use 2 spaces and end with a newline", () => {
+    it("should only change the version and keep the formatting of every file", () => {
+      // not produced by JSON.stringify: tabs, 4 spaces, CRLF, no final newline
+      const root = (version: string): string =>
+        `{\n\t"name": "root",\n\t"private": true,\n\t"version": "${version}"\n}\n`;
+      const a = (version: string): string =>
+        `{\r\n    "name": "a",\r\n    "config": {"version": "0.0.0", "keys": ["version"]},\r\n    "version" : "${version}",\r\n    "custom": [1, 2]\r\n}`;
+      const fixture = createFixture({
+        root: {},
+        workspace: { packages: ["packages/*"] },
+        files: {
+          "package.json": root("1.2.0-SNAPSHOT"),
+          "packages/a/package.json": a("0.0.0"),
+        },
+      });
+
+      Workspace.forCwd().writeVersion("1.2.0");
+
+      expect(fixture.readFile("package.json")).toBe(root("1.2.0"));
+      expect(fixture.readFile("packages/a/package.json")).toBe(a("1.2.0"));
+    });
+
+    it("should add a missing version as the last key, in the indentation of the file", () => {
       const fixture = createFixture({
         root: { name: "root", version: "1.2.0-SNAPSHOT", private: true },
         workspace: { packages: ["packages/*"] },
         files: {
-          // not produced by JSON.stringify: 4-space indentation, no newline
           "packages/a/package.json":
-            '{\n    "name": "a",\n    "version": "0.0.0",\n    "dependencies": {\n        "b": "workspace:*"\n    },\n    "custom": [1, 2]\n}',
+            '{\n\t"name": "a",\n\t"dependencies": { "b": "workspace:*" }\n}\n',
         },
       });
 
       Workspace.forCwd().writeVersion("1.2.0");
 
       expect(fixture.readFile("packages/a/package.json")).toBe(
-        `${JSON.stringify(
-          {
-            name: "a",
-            version: "1.2.0",
-            dependencies: { b: "workspace:*" },
-            custom: [1, 2],
-          },
-          null,
-          2,
-        )}\n`,
-      );
-      expect(fixture.readFile("package.json")).toBe(
-        `${JSON.stringify(
-          { name: "root", version: "1.2.0", private: true },
-          null,
-          2,
-        )}\n`,
+        '{\n\t"name": "a",\n\t"dependencies": {\n\t\t"b": "workspace:*"\n\t},\n\t"version": "1.2.0"\n}\n',
       );
     });
 
@@ -136,16 +140,12 @@ describe("Workspace version writes", () => {
       workspace.writeVersion("2.0.0");
 
       expect(fixture.readFile("package.json")).toBe(
-        `${JSON.stringify(
-          {
-            private: true,
-            version: "2.0.0",
-            name: "root",
-            description: "added later",
-          },
-          null,
-          2,
-        )}\n`,
+        JSON.stringify({
+          private: true,
+          version: "2.0.0",
+          name: "root",
+          description: "added later",
+        }),
       );
       expect(workspace.getRoot().getVersion()).toBe("2.0.0");
     });

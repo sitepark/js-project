@@ -4,7 +4,7 @@ import { Git } from "./Git.js";
 import {
   type DependencySection,
   type PackageJson,
-  serializePackageJson,
+  setPackageJsonVersion,
 } from "./PackageJson.js";
 
 import { BranchType } from "./BranchType.js";
@@ -153,9 +153,18 @@ export class Project {
     return escapeVersionIdentifierForNpm(rawVersionIdentifier);
   }
 
+  /**
+   * Writes `newVersion` into the `package.json` on disk. Only the value of
+   * `version` changes, the rest of the file keeps its formatting.
+   */
   public updateVersion(newVersion: string): void {
+    const text = readFileSync(this.packagePath, "utf8");
+    writeFileSync(
+      this.packagePath,
+      setPackageJsonVersion(text, newVersion),
+      "utf8",
+    );
     this.pkg.version = newVersion;
-    writeFileSync(this.packagePath, serializePackageJson(this.pkg), "utf8");
   }
 
   public getBranch(): string {

@@ -60,4 +60,27 @@ describe("ReleaseManagementFactory release()", () => {
     expect(versionAtCommit).toEqual(["1.2.0", "1.3.0-SNAPSHOT"]);
     expect(fixture.readJson().version).toBe("1.3.0-SNAPSHOT");
   });
+
+  it("should only change the version and keep the formatting of package.json", async () => {
+    // formatted by prettier with tabs, without a format:package-json script
+    const packageJson = (version: string): string =>
+      `{\n\t"name": "single",\n\t"version": "${version}",\n\t"files": ["dist"],\n\t"config": { "version": "unrelated" }\n}\n`;
+    const fixture = createFixture({
+      root: { name: "single" },
+      files: { "package.json": packageJson("1.2.0-SNAPSHOT") },
+    });
+    const exec = recordExecSync({ branch: "main", tags: ["1.1.0"] });
+    const fileAtCommit: string[] = [];
+    exec.respond(/^git add /, () => {
+      fileAtCommit.push(fixture.readFile("package.json"));
+      return "";
+    });
+
+    await releaseManagementForCwd().release();
+
+    expect(fileAtCommit).toEqual([
+      packageJson("1.2.0"),
+      packageJson("1.3.0-SNAPSHOT"),
+    ]);
+  });
 });

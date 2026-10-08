@@ -282,7 +282,7 @@ A workspace has exactly one version, and the root `package.json` is its single s
 
 **`format:package-json` in monorepos**: After the versions are written, `js-project` runs the root `format:package-json` script exactly once, in the workspace root. It is not run per package, so the root script is responsible for formatting every workspace `package.json`, e.g. `"format:package-json": "prettier --write package.json 'packages/*/package.json'"`.
 
-Every `package.json` written by `js-project` (in monorepos and single-package repositories) uses 2-space indentation and ends with a trailing newline.
+`js-project` only changes the value of `version` in every `package.json` it writes (in monorepos and single-package repositories), so indentation, key order and line endings stay as they are and a formatter like prettier has nothing to change. A `package.json` without a `version` gets it as the last key, in the indentation of the file.
 
 ### Publishing a monorepo
 
