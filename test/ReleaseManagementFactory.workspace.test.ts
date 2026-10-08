@@ -301,9 +301,6 @@ describe("ReleaseManagementFactory in a pnpm workspace", () => {
         version: "1.2.2-SNAPSHOT",
         description: "from 1.2.1",
       });
-      for (const file of [...ALL_PACKAGE_JSONS, "packages/d/package.json"]) {
-        expect(fixture.readFile(file)).toMatch(/\}\n$/);
-      }
     });
   });
 });

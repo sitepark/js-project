@@ -5,7 +5,7 @@ import { parse as parseYaml } from "yaml";
 import {
   type DependencySection,
   type PackageJson,
-  serializePackageJson,
+  setPackageJsonVersion,
 } from "./PackageJson.js";
 import { Project } from "./Project.js";
 import type { SupportedPackageManager } from "./packageManager.js";
@@ -256,16 +256,14 @@ export class Workspace {
    * versioning). Every file, the root included, is re-read from disk, so
    * only its `version` changes; all other keys and their order stay as they
    * are on disk, also if the file changed after the workspace was created.
-   * Every file is written with 2-space indentation and a trailing newline.
+   * Only the value of `version` changes, every file keeps its formatting.
    * The root {@link Project} is refreshed afterwards, so it (and the root
    * package, which reads through it) shows the written content.
    */
   public writeVersion(version: string): void {
     for (const pkg of this.packages) {
       const manifestPath = pkg.getPackagePath();
-      const manifest = readJson(manifestPath);
-      manifest.version = version;
-      writeFileSync(manifestPath, serializePackageJson(manifest), "utf8");
+      writeFileSync(manifestPath, withVersion(manifestPath, version), "utf8");
     }
     this.syncFromDisk();
   }
@@ -580,6 +578,14 @@ function readYaml(file: string): unknown {
 function readJson(file: string): PackageJson {
   try {
     return JSON.parse(readFileSync(file, "utf8"));
+  } catch (error) {
+    throw new Error(`Unable to read "${file}": ${errorMessage(error)}`);
+  }
+}
+
+function withVersion(file: string, version: string): string {
+  try {
+    return setPackageJsonVersion(readFileSync(file, "utf8"), version);
   } catch (error) {
     throw new Error(`Unable to read "${file}": ${errorMessage(error)}`);
   }

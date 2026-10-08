@@ -17,7 +17,7 @@ Before changing release, publish or workspace behaviour, read the ADR an invaria
 - **Plain publish for single packages**: `<pm> publish`, because without a workspace `pnpm -r` treats every nested `package.json` as a package.
 - **Registries from the environment** (ADR 0003): only `JS_PROJECT_SNAPSHOT_REGISTRY` / `JS_PROJECT_RELEASE_REGISTRY`.
 - **Root scripts run once**: `test`, `verify`, `build` and `format:package-json` run at the root, which fans out across packages.
-- **One serializer**: every `package.json` write goes through `serializePackageJson()`.
+- **Only the version**: every `package.json` write goes through `setPackageJsonVersion()`, which changes the `version` value and keeps the rest of the file byte-identical.
 
 ## Docs
 
