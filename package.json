@@ -39,7 +39,7 @@
   "author": "Holger Veltrup <veltrup@sitepark.com> (http://www.sitepark.com)",
   "license": "MIT",
   "dependencies": {
-    "semver": "^7.8.5",
+    "semver": "^7.8.6",
     "tinyglobby": "^0.2.17",
     "type-fest": "^5.10.0",
     "yaml": "^2.9.1",
