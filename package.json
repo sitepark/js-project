@@ -41,7 +41,7 @@
   "dependencies": {
     "semver": "^7.8.6",
     "tinyglobby": "^0.2.17",
-    "type-fest": "^5.10.0",
+    "type-fest": "^6.0.3",
     "yaml": "^2.9.1",
     "yargs": "^18.2.0"
   },
